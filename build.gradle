@@ -22,11 +22,25 @@ dependencies {
 
 publishing {
     publications {
-        maven(MavenPublication) {
-            groupId = 'com.sussoftware'
-            artifactId = 'dao-builder'
-            version = version
-            from components.java
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'DAO Builder'
+                description = 'Automated dao builder for spring jdbc'
+                url = 'http://www.sussoftware.com/dao'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'bencuthbert001'
+                        name = 'Ben Cuthbert'
+                        email = 'bencuthbert@sussoftware.com'
+                    }
+                }
+            }
         }
     }
 }
