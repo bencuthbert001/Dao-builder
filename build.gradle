@@ -1,0 +1,31 @@
+plugins {
+    id 'java'
+}
+
+group 'com.sussoftware'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+}
+
+dependencies {
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:3.0.0-alpha1'
+    implementation 'org.springframework:spring-jdbc:5.3.16'
+}
+
+sourceSets {
+    main {
+        java {
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

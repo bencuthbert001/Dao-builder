@@ -16,3 +16,15 @@ dependencies {<br>
 </pre>
 <br>
 Replace spring-boot with whatever JDBC library you require.
+<br>
+For working example please see ExampleBO.java inside the examples.persist directory
+<br><br>
+<b>Annotations:</b><br>
+<br>
+@DatabaseField(name = "ID", isPrimaryKey = true) - This should be placed on the primary key field to generate a primary key statement
+<br><br>
+@DatabaseField(name = "NAME", isSearchFieldSingle = true)  - This should be placed on your secondary search field
+<br><br>
+@DatabaseField(name = "SURNAME")  - This annotates a field as a regular field and is included in create,update,delete,insert
+
+
