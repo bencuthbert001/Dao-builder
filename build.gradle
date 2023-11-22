@@ -35,7 +35,7 @@ publishing {
         gpr(MavenPublication) {
             groupId = 'com.sussoftware'
             artifactId = 'dao-builder'
-            version = '1.0.0'
+            version = version
 
             from(components.java)
         }
