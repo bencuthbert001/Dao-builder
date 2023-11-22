@@ -26,13 +26,17 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/bencuthbert001/dao-builder")
             credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
     publications {
         gpr(MavenPublication) {
+            groupId = 'com.sussoftware'
+            artifactId = 'dao-builder'
+            version = '1.0.0'
+
             from(components.java)
         }
         mavenJava(MavenPublication) {
