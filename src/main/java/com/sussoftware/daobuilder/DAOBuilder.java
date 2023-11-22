@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,6 +21,7 @@ public class DAOBuilder {
     private final static String SELECT_ALL = "SELECT * FROM %s";
     private final static String SELECT_SECONDARY = "SELECT * FROM %s WHERE %s = :%s";
     private final static String DELETE_WHERE_ID = "DELETE FROM %s WHERE %s = :%s";
+    private final static String FIND_WHERE_ID = "SELECT * FROM %s WHERE %s = :%s";
     private final static String INSERT_INTO = "INSERT INTO %s(%s) VALUES(%s)";
     private final static String UPDATE = "UPDATE %s SET %s WHERE %s";
 
@@ -41,8 +43,9 @@ public class DAOBuilder {
         final String tableName = annotation.tableName();
         String selectAllStatement = String.format(SELECT_ALL, tableName);
         String secondaryKeySearch = null;
-        String primaryKeyField = null;
+        String primaryKeyFieldName = null;
         String deletePrimaryKeyStatement = null;
+        String findWherePrimaryKeyStatement = null;
         String secondarySearchFieldName = null;
         final Method[] declaredMethods = object.getDeclaredMethods();
         final Field[] declaredFields = object.getDeclaredFields();
@@ -56,7 +59,8 @@ public class DAOBuilder {
                 Boolean searchFieldSingle = dbField.isSearchFieldSingle();
                 if (primaryKey) {
                     deletePrimaryKeyStatement = String.format(DELETE_WHERE_ID, tableName, dbField.name(), dbField.name());
-                    primaryKeyField = field.getName();
+                    findWherePrimaryKeyStatement = String.format(FIND_WHERE_ID, tableName, dbField.name(), dbField.name());
+                    primaryKeyFieldName = field.getName();
                 }
 
                 if (searchFieldSingle) {
@@ -73,9 +77,9 @@ public class DAOBuilder {
         String insertStatement = String.format(INSERT_INTO, tableName, columnNames, columnValues);
         String updateStatement = String.format(UPDATE, tableName, columnsForUpdate, updateWhereStatement);
 
-        final String implClass = buildJavaClass(newDaoName, newDaoInterfaceName, boName, databaseFields, constantsName, secondarySearchFieldName, primaryKeyField, declaredMethods);
-        final String interfaceClass = builderInterfaceClass(newDaoInterfaceName, boName, secondarySearchFieldName);
-        final String constantsClass = buildMemberConstatnsClass(constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondaryKeySearch, updateStatement);
+        final String implClass = buildJavaClass(newDaoName, newDaoInterfaceName, boName, databaseFields, constantsName, secondarySearchFieldName, primaryKeyFieldName, declaredMethods, object);
+        final String interfaceClass = builderInterfaceClass(newDaoInterfaceName, boName, primaryKeyFieldName, secondarySearchFieldName, object);
+        final String constantsClass = buildMemberConstatnsClass(constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondaryKeySearch, updateStatement, findWherePrimaryKeyStatement);
 
         final File baseDir = new File(directory);
         if(!baseDir.exists()) {
@@ -89,6 +93,9 @@ public class DAOBuilder {
             final File file = new File(implFileName);
             if(!file.exists()) {
                 file.createNewFile();
+            }else {
+                file.delete();
+                file.createNewFile();
             }
             final FileWriter filterWriter = new FileWriter(file);
             filterWriter.write(implClass);
@@ -100,6 +107,9 @@ public class DAOBuilder {
             final File interfaceFile = new File(interfaceName);
             if(!interfaceFile.exists()) {
                 interfaceFile.createNewFile();
+            }else {
+                interfaceFile.delete();
+                interfaceFile.createNewFile();
             }
             final FileWriter fileWriter = new FileWriter(interfaceFile);
             fileWriter.write(interfaceClass);
@@ -108,7 +118,14 @@ public class DAOBuilder {
             throw new RuntimeException(e);
         }
         try {
-            final FileWriter fileWriter = new FileWriter(new File(constantsFileName));
+            final File constantsFile = new File(constantsFileName);
+            if(!constantsFile.exists()) {
+                constantsFile.createNewFile();
+            }else {
+                constantsFile.delete();
+                constantsFile.createNewFile();
+            }
+            final FileWriter fileWriter = new FileWriter(constantsFile);
             fileWriter.write(constantsClass);
             fileWriter.flush();
         } catch (IOException e) {
@@ -192,9 +209,11 @@ public class DAOBuilder {
         return builder.toString();
     }
 
-    private String buildJavaClass(String newDaoName, String implName, String boName, List<Field> databaseFields, String constantsName, String secondarySearchFieldName, String primaryKeyField, Method[] declaredMethods) {
+    private String buildJavaClass(String newDaoName, String implName, String boName, List<Field> databaseFields, String constantsName, String secondarySearchFieldName, String primaryKeyFieldName, Method[] declaredMethods, Class object) {
         StringBuilder builder = new StringBuilder();
 
+        String s1 = primaryKeyFieldName.substring(0, 1).toUpperCase();
+        String primaryKeyFieldInCaps = s1 + primaryKeyFieldName.substring(1, primaryKeyFieldName.length());
         String s2 = secondarySearchFieldName.substring(0, 1).toUpperCase();
         String secondaryFieldINCaps = s2 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
 
@@ -202,9 +221,23 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("/**");
         builder.append("\n");
-        builder.append("* Auto generated dao implementation class by DAO-Builder");
+        builder.append("* Auto generated dao implementation class by DAO-Builder : "+new Date());
         builder.append("\n");
         builder.append("*/");
+        builder.append("\n");
+        builder.append("\n");
+        builder.append("import "+object.getName()+";\n");
+        builder.append("import java.sql.ResultSet;\n");
+        builder.append("import java.sql.SQLException;\n");
+        builder.append("import java.sql.Timestamp;\n");
+        builder.append("import java.time.Instant;\n");
+        builder.append("import java.util.HashMap;\n");
+        builder.append("import java.util.List;\n");
+        builder.append("import java.util.Map;\n");
+        builder.append("import org.slf4j.Logger;\n");
+        builder.append("import org.slf4j.LoggerFactory;\n");
+        builder.append("import org.springframework.jdbc.core.RowMapper;\n");
+        builder.append("import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;\n");
         builder.append("\n");
         builder.append("public class " + newDaoName + " implements " + implName + " {");
         builder.append("\n");
@@ -235,7 +268,13 @@ public class DAOBuilder {
         for (Field field : databaseFields) {
             DatabaseField dbField = field.getAnnotation(DatabaseField.class);
             Method method = findMethodForField(field, declaredMethods);
+            String dbNameFieldAnnotation = dbField.name();
             final String databaseFieldName = dbField.name();
+            if(dbNameFieldAnnotation.contains("CREATED")) {
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", from);");
+                builder.append("\n");
+                continue;
+            }
             if (method != null) {
                 builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data." + method.getName() + "());");
                 builder.append("\n");
@@ -250,6 +289,41 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t return true;\n");
         builder.append("\t}\n");
+        // Updated method
+        builder.append("\t@Override");
+        builder.append("\n");
+        builder.append("\t public void update(" + boName + " data) throws SqlException {\n");
+        builder.append("\t\t final long l = data.getCreated();");
+        builder.append("\n");
+        builder.append("\t\t final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));");
+        builder.append("\n");
+        builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
+        builder.append("\n");
+
+        for (Field field : databaseFields) {
+            DatabaseField dbField = field.getAnnotation(DatabaseField.class);
+            String dbNameFieldAnnotation = dbField.name();
+            Method method = findMethodForField(field, declaredMethods);
+            final String databaseFieldName = dbField.name();
+
+            if(dbNameFieldAnnotation.contains("CREATED")) {
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", from);");
+                builder.append("\n");
+                continue;
+            }
+            if (method != null) {
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data." + method.getName() + "());");
+                builder.append("\n");
+            } else {
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data.getValue());");
+                builder.append("\n");
+            }
+        }
+        builder.append("\n");
+        builder.append("\t\t this.jdbcTemplate.update(" + constantsName + ".UPDATE_STATEMENT, parameters);");
+        builder.append("\n");
+        builder.append("\t}\n");
+
         builder.append("\t@Override");
         builder.append("\n");
         builder.append("\t public List<" + boName + "> findAll() {\n");
@@ -260,7 +334,7 @@ public class DAOBuilder {
         builder.append("\t}\n");
         builder.append("\t@Override");
         builder.append("\n");
-        DatabaseField primarySearchField = findByFieldFromName(primaryKeyField, databaseFields);
+        DatabaseField primarySearchField = findByFieldFromName(primaryKeyFieldName, databaseFields);
         builder.append("\t public void delete(long id) {\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
@@ -268,6 +342,21 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t\t this.jdbcTemplate.update(" + constantsName + ".DELETE_ID_SQL, parameters);\n");
         builder.append("\t}\n");
+        // Primary key search
+        builder.append("\t@Override");
+        builder.append("\n");
+        builder.append("\t public " + boName + " findBy" + primaryKeyFieldInCaps + "(long id) {\n");
+        builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
+        builder.append("\n");
+        builder.append("\t\t parameters.put(" + constantsName + "." + primarySearchField.name() + ", id);");
+        builder.append("\n");
+        builder.append("\t\t final List<" + boName + "> query = this.jdbcTemplate.query(" + constantsName + ".SELECT_BY_ID, parameters, this.dataRowMapper);");
+        builder.append("\n");
+        builder.append("\t\t final " + boName + " data = (!query.isEmpty()) ? query.get(0) : null;");
+        builder.append("\n");
+        builder.append("\t\t return data;\n");
+        builder.append("\t}\n");
+        // Secondary value search
         builder.append("\t@Override");
         builder.append("\n");
         builder.append("\t public " + boName + " findBy" + secondaryFieldINCaps + "(String key) {\n");
@@ -278,7 +367,7 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t\t final List<" + boName + "> query = this.jdbcTemplate.query(" + constantsName + ".SELECT_BY_CODE, parameters, this.dataRowMapper);");
         builder.append("\n");
-        builder.append("\t\t final " + boName + " data = query.get(0);");
+        builder.append("\t\t final " + boName + " data = (!query.isEmpty()) ? query.get(0) : null;");
         builder.append("\n");
         builder.append("\t\t return data;\n");
         builder.append("\t}\n");
@@ -301,8 +390,8 @@ public class DAOBuilder {
             } else {
                 className = splits[splits.length - 1];
             }
-            String s1 = className.substring(0, 1).toUpperCase();
-            String capitaliseFirstChar = s1 + className.substring(1, className.length());
+            String s3 = className.substring(0, 1).toUpperCase();
+            String capitaliseFirstChar = s3 + className.substring(1, className.length());
             builder.append("\t\t\t" + className + " " + field.getName() + " = rs.get" + capitaliseFirstChar + "(" + constantsName + "." + databaseFieldName + ");");
             builder.append("\n");
         }
@@ -339,13 +428,13 @@ public class DAOBuilder {
         return null;
     }
 
-    private String buildMemberConstatnsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, String secondaryKeySearch, String updateStatement) {
+    private String buildMemberConstatnsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, String secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement) {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
         builder.append("/**");
         builder.append("\n");
-        builder.append("* Auto generated dao class by DAO-BUILDER");
+        builder.append("* Auto generated dao class by DAO-BUILDER: "+new Date());
         builder.append("\n");
         builder.append("*/");
         builder.append("\n");
@@ -354,7 +443,7 @@ public class DAOBuilder {
         builder.append("\tpublic static final String TABLE_NAME = \"" + tableName + "\";");
         builder.append("\n");
         builder.append("\tpublic static final String INSERT_STATEMENT = \"" + insertStatement + "\";");
-
+        builder.append("\n");
         builder.append("\tpublic static final String UPDATE_STATEMENT = \"" + updateStatement + "\";");
         builder.append("\n");
         builder.append("\tpublic static final String SELECT_ALL_SQL = \"" + selectAllStatement + "\";");
@@ -363,7 +452,7 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\tpublic static final String SELECT_BY_CODE = \"" + secondaryKeySearch + "\";");
         builder.append("\n");
-
+        builder.append("\tpublic static final String SELECT_BY_ID = \"" + findWherePrimaryKeyStatement + "\";");
         builder.append("\n");
         for (Field field : databaseFields
         ) {
@@ -377,15 +466,19 @@ public class DAOBuilder {
         return builder.toString();
     }
 
-    private String builderInterfaceClass(String constantClassName, String boName, String secondarySearchFieldName) {
+    private String builderInterfaceClass(String constantClassName, String boName, String primaryKeyFieldName, String secondarySearchFieldName, Class object) {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
         builder.append("/**");
         builder.append("\n");
-        builder.append("* Auto generated dao class by DAO-Builder");
+        builder.append("* Auto generated dao class by DAO-Builder: "+new Date());
         builder.append("\n");
         builder.append("*/");
+        builder.append("\n");
+        builder.append("import "+object.getName()+";\n");
+        builder.append("import java.sql.SQLException;\n");
+        builder.append("import java.util.List;\n");
         builder.append("\n");
         builder.append("public interface " + constantClassName + " {");
         builder.append("\n");
@@ -399,9 +492,17 @@ public class DAOBuilder {
         builder.append("\tpublic void delete(long id);");
         builder.append("\n");
         builder.append("\n");
+        builder.append("\tpublic void update("+boName+" data) throws SqlException;");
+        builder.append("\n");
+        builder.append("\n");
         String s1 = secondarySearchFieldName.substring(0, 1).toUpperCase();
         String capitaliseFirstChar = s1 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
         builder.append("\t" + boName + " findBy" + capitaliseFirstChar + "(String " + secondarySearchFieldName + ");");
+        builder.append("\n");
+        builder.append("\n");
+        String s2 = primaryKeyFieldName.substring(0, 1).toUpperCase();
+        String capitalisePrimaryChar = s2 + primaryKeyFieldName.substring(1, primaryKeyFieldName.length());
+        builder.append("\t" + boName + " findBy" + capitalisePrimaryChar + "(long id);");
         builder.append("\n");
         builder.append("\n");
         builder.append("}");

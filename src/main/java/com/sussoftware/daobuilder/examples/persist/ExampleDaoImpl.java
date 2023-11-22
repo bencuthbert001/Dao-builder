@@ -1,4 +1,7 @@
 package com.sussoftware.daobuilder.examples.persist;
+/**
+ * Auto generated dao implementation class by DAO-Builder : Wed Nov 22 13:41:41 GMT 2023
+ * */
 
 import com.sussoftware.daobuilder.examples.ExampleBO;
 import java.sql.ResultSet;
@@ -13,9 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
-/**
- * Auto generated dao implementation class by DAO-Builder
- */
 public class ExampleDaoImpl implements ExampleDao {
 
 	private static final Logger logger = LoggerFactory.getLogger(ExampleDaoImpl.class);
@@ -35,10 +35,22 @@ public class ExampleDaoImpl implements ExampleDao {
 		parameters.put(ExampleConstants.ID, data.getId());
 		parameters.put(ExampleConstants.NAME, data.getName());
 		parameters.put(ExampleConstants.SURNAME, data.getSurname());
-		parameters.put(ExampleConstants.CREATED, data.getCreated());
+		parameters.put(ExampleConstants.CREATED, from);
 
 		this.jdbcTemplate.update(ExampleConstants.INSERT_STATEMENT, parameters);
 		return true;
+	}
+	@Override
+	public void update(ExampleBO data) throws SQLException {
+		final long l = data.getCreated();
+		final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));
+		Map<String, Object> parameters = new HashMap<>();
+		parameters.put(ExampleConstants.ID, data.getId());
+		parameters.put(ExampleConstants.NAME, data.getName());
+		parameters.put(ExampleConstants.SURNAME, data.getSurname());
+		parameters.put(ExampleConstants.CREATED, from);
+
+		this.jdbcTemplate.update(ExampleConstants.UPDATE_STATEMENT, parameters);
 	}
 	@Override
 	public List<ExampleBO> findAll() {
@@ -53,11 +65,19 @@ public class ExampleDaoImpl implements ExampleDao {
 		this.jdbcTemplate.update(ExampleConstants.DELETE_ID_SQL, parameters);
 	}
 	@Override
+	public ExampleBO findById(long id) {
+		Map<String, Object> parameters = new HashMap<>();
+		parameters.put(ExampleConstants.ID, id);
+		final List<ExampleBO> query = this.jdbcTemplate.query(ExampleConstants.SELECT_BY_ID, parameters, this.dataRowMapper);
+		final ExampleBO data = (!query.isEmpty()) ? query.get(0) : null;
+		return data;
+	}
+	@Override
 	public ExampleBO findByName(String key) {
 		Map<String, Object> parameters = new HashMap<>();
 		parameters.put(ExampleConstants.NAME, key);
 		final List<ExampleBO> query = this.jdbcTemplate.query(ExampleConstants.SELECT_BY_CODE, parameters, this.dataRowMapper);
-		final ExampleBO data = query.get(0);
+		final ExampleBO data = (!query.isEmpty()) ? query.get(0) : null;
 		return data;
 	}
 
@@ -67,7 +87,7 @@ public class ExampleDaoImpl implements ExampleDao {
 			String name = rs.getString(ExampleConstants.NAME);
 			long surname = rs.getLong(ExampleConstants.SURNAME);
 			long created = rs.getLong(ExampleConstants.CREATED);
-			return new ExampleBO(id, name, surname, created);
+			return null;
 		}
 	}
 }
