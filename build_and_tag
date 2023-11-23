@@ -1,0 +1,13 @@
+#!/bin/sh
+
+./gradlew clean build
+git add .
+echo "Enter release message"
+read message
+git commit -m $message
+git push
+
+echo "Enter tag"
+read tag
+git tag $tag -a -m $message
+git push origin --tags
