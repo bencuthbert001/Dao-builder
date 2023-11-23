@@ -9,5 +9,5 @@ git push
 
 echo "Enter tag"
 read tag
-git tag -m $message $tag -a
+git tag $tag -a
 git push origin --tags
