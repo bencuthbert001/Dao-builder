@@ -26,8 +26,18 @@ public class DAOBuilder {
     private final static String UPDATE = "UPDATE %s SET %s WHERE %s";
 
     public static void main(String args[]) {
-        final DAOBuilder daoClassBuilder = new DAOBuilder();
-        daoClassBuilder.start(ExampleBO.class);
+        if(args.length != 1) {
+            System.out.println("Error please specify class name i.e com.co.ExampleBO.class");
+            System.exit(-1);
+        }
+        String className = args[0];
+        try {
+            Class c = Class.forName(className);
+            final DAOBuilder daoClassBuilder = new DAOBuilder();
+            daoClassBuilder.start(c);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public final void start(Class object) {
