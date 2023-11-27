@@ -1,11 +1,12 @@
 package com.sussoftware.daobuilder;
 
-import com.sussoftware.daobuilder.examples.ExampleBO;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -16,8 +17,8 @@ import java.util.List;
  */
 public class DAOBuilder {
 
-    private static final String directory = "src/main/java/com/sussoftware/daobuilder/examples/persist";
-    private static final String PACKAGE_NAME = "com.sussoftware.daobuilder.examples.persist";
+    private String directory;
+    private String PACKAGE_NAME;
     private final static String SELECT_ALL = "SELECT * FROM %s";
     private final static String SELECT_SECONDARY = "SELECT * FROM %s WHERE %s = :%s";
     private final static String DELETE_WHERE_ID = "DELETE FROM %s WHERE %s = :%s";
@@ -25,22 +26,33 @@ public class DAOBuilder {
     private final static String INSERT_INTO = "INSERT INTO %s(%s) VALUES(%s)";
     private final static String UPDATE = "UPDATE %s SET %s WHERE %s";
 
-    public static void main(String args[]) {
-        if(args.length != 1) {
-            System.out.println("Error please specify class name i.e com.co.ExampleBO.class");
-            System.exit(-1);
-        }
+    public DAOBuilder() {
+
+    }
+
+    public void start(String args[]) {
         String className = args[0];
+        String directory = args[1];
+        String javaPackage = args[2];
         try {
             Class c = Class.forName(className);
-            final DAOBuilder daoClassBuilder = new DAOBuilder();
-            daoClassBuilder.start(c);
+            this.directory = directory;
+            this.PACKAGE_NAME = javaPackage;
+            buildDAO(c);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public final void start(Class object) {
+    public static void main(String args[]) {
+        if(args.length != 3) {
+            System.out.println("Invalid arguments, className,directory,javaPackage");
+            System.exit(-1);
+        }
+       new DAOBuilder().start(args);
+    }
+
+    public final void buildDAO(Class object) {
         String name = object.getSimpleName();
         String boName = object.getSimpleName();
         if (name.contains("BO")) {
@@ -59,7 +71,7 @@ public class DAOBuilder {
         String secondarySearchFieldName = null;
         final Method[] declaredMethods = object.getDeclaredMethods();
         final Field[] declaredFields = object.getDeclaredFields();
-
+        
         List<Field> databaseFields = new ArrayList<>();
         for (Field field : declaredFields) {
             if (field.isAnnotationPresent(DatabaseField.class)) {
@@ -267,7 +279,8 @@ public class DAOBuilder {
         // Build the methods
         builder.append("\t@Override");
         builder.append("\n");
-        builder.append("\t public boolean create(" + boName + " data) throws SqlException {\n");
+        builder.append("\t public boolean create(" + boName + " data) throws SQLException {\n");
+        builder.append("\t\t logger.debug(\"Creating row {}\",data);\n");
         builder.append("\t\t final long l = data.getCreated();");
         builder.append("\n");
         builder.append("\t\t final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));");
@@ -302,7 +315,8 @@ public class DAOBuilder {
         // Updated method
         builder.append("\t@Override");
         builder.append("\n");
-        builder.append("\t public void update(" + boName + " data) throws SqlException {\n");
+        builder.append("\t public void update(" + boName + " data) throws SQLException {\n");
+        builder.append("\t\t logger.debug(\"Updating row {}\",data);\n");
         builder.append("\t\t final long l = data.getCreated();");
         builder.append("\n");
         builder.append("\t\t final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));");
@@ -346,6 +360,7 @@ public class DAOBuilder {
         builder.append("\n");
         DatabaseField primarySearchField = findByFieldFromName(primaryKeyFieldName, databaseFields);
         builder.append("\t public void delete(long id) {\n");
+        builder.append("\t\t logger.debug(\"Attempting to delete {}\",id);\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
         builder.append("\t\t parameters.put(" + constantsName + "." + primarySearchField.name() + ", id);");
@@ -356,6 +371,7 @@ public class DAOBuilder {
         builder.append("\t@Override");
         builder.append("\n");
         builder.append("\t public " + boName + " findBy" + primaryKeyFieldInCaps + "(long id) {\n");
+        builder.append("\t\t logger.debug(\"Attempting to findBy {}\",id);\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
         builder.append("\t\t parameters.put(" + constantsName + "." + primarySearchField.name() + ", id);");
@@ -386,6 +402,7 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t\tpublic " + boName + " mapRow(ResultSet rs, int rowNum) throws SQLException {");
         builder.append("\n");
+        StringBuilder constructorBuilder = new StringBuilder();
         for (Field field : databaseFields
         ) {
             DatabaseField dbField = field.getAnnotation(DatabaseField.class);
@@ -402,11 +419,16 @@ public class DAOBuilder {
             }
             String s3 = className.substring(0, 1).toUpperCase();
             String capitaliseFirstChar = s3 + className.substring(1, className.length());
-            builder.append("\t\t\t" + className + " " + field.getName() + " = rs.get" + capitaliseFirstChar + "(" + constantsName + "." + databaseFieldName + ");");
+            final String name = field.getName();
+            constructorBuilder.append(name+",");
+            builder.append("\t\t\t" + className + " " + name + " = rs.get" + capitaliseFirstChar + "(" + constantsName + "." + databaseFieldName + ");");
             builder.append("\n");
         }
-        builder.append("\t\t\t return new " + boName + "();");
-        builder.append("\n}");
+        String constructureValueWithComma = constructorBuilder.toString();
+        // Take out the last ,
+        String constructureValue = constructureValueWithComma.substring(0, constructureValueWithComma.length() -1);
+        builder.append("\t\t\t return new " + boName + "("+constructureValue+");");
+        builder.append("\n\t\t}");
         builder.append("\n");
         builder.append("\t}");
         builder.append("\n");
@@ -468,8 +490,8 @@ public class DAOBuilder {
         ) {
             DatabaseField dbField = field.getAnnotation(DatabaseField.class);
             final String name = dbField.name();
-            builder.append("\t\tpublic static final String " + name + " = \"" + name + "\"");
-            builder.append(";");
+            builder.append("\tpublic static final String " + name + " = \"" + name + "\"");
+            builder.append("\t;");
             builder.append("\n");
         }
         builder.append("}");
@@ -493,7 +515,7 @@ public class DAOBuilder {
         builder.append("public interface " + constantClassName + " {");
         builder.append("\n");
         builder.append("\n");
-        builder.append("\tpublic boolean create(" + boName + " data) throws SqlException;");
+        builder.append("\tpublic boolean create(" + boName + " data) throws SQLException;");
         builder.append("\n");
         builder.append("\n");
         builder.append("\tpublic List<" + boName + "> findAll();");
@@ -502,7 +524,7 @@ public class DAOBuilder {
         builder.append("\tpublic void delete(long id);");
         builder.append("\n");
         builder.append("\n");
-        builder.append("\tpublic void update("+boName+" data) throws SqlException;");
+        builder.append("\tpublic void update("+boName+" data) throws SQLException;");
         builder.append("\n");
         builder.append("\n");
         String s1 = secondarySearchFieldName.substring(0, 1).toUpperCase();

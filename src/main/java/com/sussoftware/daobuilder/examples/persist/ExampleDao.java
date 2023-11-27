@@ -1,7 +1,7 @@
 package com.sussoftware.daobuilder.examples.persist;
 /**
- * Auto generated dao class by DAO-Builder: Wed Nov 22 13:41:41 GMT 2023
- */
+* Auto generated dao class by DAO-Builder: Mon Nov 27 09:55:05 GMT 2023
+*/
 import com.sussoftware.daobuilder.examples.ExampleBO;
 import java.sql.SQLException;
 import java.util.List;
