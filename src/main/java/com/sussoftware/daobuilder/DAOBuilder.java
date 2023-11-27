@@ -3,10 +3,8 @@ package com.sussoftware.daobuilder;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -63,7 +61,7 @@ public class DAOBuilder {
         String constantsName = name + "Constants";
         final DatabaseObject annotation = (DatabaseObject) object.getDeclaredAnnotation(DatabaseObject.class);
         final String tableName = annotation.tableName();
-        String selectAllStatement = String.format(SELECT_ALL, tableName);
+        String selectAllStatement = String.format(SELECT_ALL, "\"+ExampleConstants.TABLE_NAME+\"");
         String secondaryKeySearch = null;
         String primaryKeyFieldName = null;
         String deletePrimaryKeyStatement = null;
@@ -80,13 +78,13 @@ public class DAOBuilder {
                 Boolean primaryKey = dbField.isPrimaryKey();
                 Boolean searchFieldSingle = dbField.isSearchFieldSingle();
                 if (primaryKey) {
-                    deletePrimaryKeyStatement = String.format(DELETE_WHERE_ID, tableName, dbField.name(), dbField.name());
-                    findWherePrimaryKeyStatement = String.format(FIND_WHERE_ID, tableName, dbField.name(), dbField.name());
+                    deletePrimaryKeyStatement = String.format(DELETE_WHERE_ID, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
+                    findWherePrimaryKeyStatement = String.format(FIND_WHERE_ID, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
                     primaryKeyFieldName = field.getName();
                 }
 
                 if (searchFieldSingle) {
-                    secondaryKeySearch = String.format(SELECT_SECONDARY, tableName, dbField.name(), dbField.name());
+                    secondaryKeySearch = String.format(SELECT_SECONDARY, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
                     secondarySearchFieldName = field.getName();
                 }
             }
@@ -96,12 +94,12 @@ public class DAOBuilder {
         String columnValues = getColumnValuesFromFields(databaseFields);
         String columnsForUpdate = getColumnsForUpdate(databaseFields);
         String updateWhereStatement = getUpdateWhereStatement(databaseFields);
-        String insertStatement = String.format(INSERT_INTO, tableName, columnNames, columnValues);
-        String updateStatement = String.format(UPDATE, tableName, columnsForUpdate, updateWhereStatement);
+        String insertStatement = String.format(INSERT_INTO, "\"+ExampleConstants.TABLE_NAME+\"", columnNames, columnValues);
+        String updateStatement = String.format(UPDATE, "\"+ExampleConstants.TABLE_NAME+\"", columnsForUpdate, updateWhereStatement);
 
         final String implClass = buildJavaClass(newDaoName, newDaoInterfaceName, boName, databaseFields, constantsName, secondarySearchFieldName, primaryKeyFieldName, declaredMethods, object);
         final String interfaceClass = builderInterfaceClass(newDaoInterfaceName, boName, primaryKeyFieldName, secondarySearchFieldName, object);
-        final String constantsClass = buildMemberConstatnsClass(constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondaryKeySearch, updateStatement, findWherePrimaryKeyStatement);
+        final String constantsClass = buildMemberConstantsClass(constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondaryKeySearch, updateStatement, findWherePrimaryKeyStatement);
 
         final File baseDir = new File(directory);
         if(!baseDir.exists()) {
@@ -460,7 +458,7 @@ public class DAOBuilder {
         return null;
     }
 
-    private String buildMemberConstatnsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, String secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement) {
+    private String buildMemberConstantsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, String secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement) {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
@@ -490,8 +488,7 @@ public class DAOBuilder {
         ) {
             DatabaseField dbField = field.getAnnotation(DatabaseField.class);
             final String name = dbField.name();
-            builder.append("\tpublic static final String " + name + " = \"" + name + "\"");
-            builder.append("\t;");
+            builder.append("\tpublic static final String " + name + " = \"" + name + "\";");
             builder.append("\n");
         }
         builder.append("}");

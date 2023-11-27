@@ -1,6 +1,6 @@
 package com.sussoftware.daobuilder.examples.persist;
 /**
-* Auto generated dao implementation class by DAO-Builder : Mon Nov 27 09:55:05 GMT 2023
+* Auto generated dao implementation class by DAO-Builder : Mon Nov 27 10:08:02 GMT 2023
 */
 
 import com.sussoftware.daobuilder.examples.ExampleBO;
