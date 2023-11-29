@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.sussoftware",
+    "module": "dao-builder",
+    "version": "1.7.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.5.1",
+      "buildId": "m44ivhgzqnh53ok2spipsiu6wi"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "dao-builder-1.7.0.jar",
+          "url": "dao-builder-1.7.0.jar",
+          "size": 18211,
+          "sha512": "6401b0340cfc8ead0defa6022b281cce14fb2d9f898718b57c3628688eb24aca1d66f651ca4ec3df7ac8904ea7012115b25b5d8a2c18a6caf29e7fd60985f0a8",
+          "sha256": "5b224a4fc923b1e92b857d3afd634c00bf556771473565b3a5dde31ec710f7a7",
+          "sha1": "5e32f6fea5ed64188e35bab07076f6d515a94747",
+          "md5": "2beb16e6c82a951cfb46a30b084b30ff"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.apache.logging.log4j",
+          "module": "log4j-slf4j2-impl",
+          "version": {
+            "requires": "3.0.0-alpha1"
+          }
+        },
+        {
+          "group": "org.springframework",
+          "module": "spring-jdbc",
+          "version": {
+            "requires": "5.3.16"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dao-builder-1.7.0.jar",
+          "url": "dao-builder-1.7.0.jar",
+          "size": 18211,
+          "sha512": "6401b0340cfc8ead0defa6022b281cce14fb2d9f898718b57c3628688eb24aca1d66f651ca4ec3df7ac8904ea7012115b25b5d8a2c18a6caf29e7fd60985f0a8",
+          "sha256": "5b224a4fc923b1e92b857d3afd634c00bf556771473565b3a5dde31ec710f7a7",
+          "sha1": "5e32f6fea5ed64188e35bab07076f6d515a94747",
+          "md5": "2beb16e6c82a951cfb46a30b084b30ff"
+        }
+      ]
+    }
+  ]
+}

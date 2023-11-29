@@ -8,6 +8,16 @@ group 'com.sussoftware'
 sourceCompatibility = 11
 targetCompatibility = 11
 
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+}
+
 repositories {
     mavenCentral()
 }
@@ -21,40 +31,17 @@ dependencies {
 }
 
 publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/susspectsoftware-dev/dao-builder")
-            credentials {
-                username = System.getProperty("GITHUB_ACTOR")
-                password = System.getProperty("GITHUB_TOKEN")
-            }
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'dao-builder'
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
         }
     }
-    publications {
-        gpr(MavenPublication) {
-            groupId = 'com.sussoftware'
-            from(components.java)
-        }
-        mavenJava(MavenPublication) {
-            pom {
-                name = 'DAO Builder'
-                description = 'Automated dao builder for spring jdbc'
-                url = 'http://www.sussoftware.com/dao'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'susspectsoftware-dev'
-                        name = 'David Brown'
-                        email = 'susspectsoftware-dev@sussoftware.com'
-                    }
-                }
-            }
+    repositories {
+        maven {
+            url 'repo'
         }
     }
 }
