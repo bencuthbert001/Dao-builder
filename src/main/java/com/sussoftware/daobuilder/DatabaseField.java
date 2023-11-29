@@ -14,8 +14,33 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DatabaseField {
+    /**
+     * Name of the field
+     * @return
+     */
     String name();
+
+    /**
+     * If set to true, then this will be used in the primary key lookup
+     * @return
+     */
     boolean isPrimaryKey() default false;
-    boolean isSearchFieldSingle()default false;
-    boolean isTimestampField()default false;
+
+    /**
+     * If true, then an additional search statement will be created to allow additional select by
+     * @return
+     */
+    boolean isSearchFieldSingle() default false;
+
+    /**
+     * This will create the correct constants file SQL statement name
+     * @return
+     */
+    String searchFieldSqlName() default "BY_CODE";
+
+    /**
+     * Time stamp helps with formatting using Timestamp values in the update and create statements.
+     * @return
+     */
+    boolean isTimestampField() default false;
 }

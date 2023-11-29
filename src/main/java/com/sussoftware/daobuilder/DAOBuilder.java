@@ -62,13 +62,13 @@ public class DAOBuilder {
         final DatabaseObject annotation = (DatabaseObject) object.getDeclaredAnnotation(DatabaseObject.class);
         final String tableName = annotation.tableName();
         String selectAllStatement = String.format(SELECT_ALL, "\"+ExampleConstants.TABLE_NAME+\"");
-        String secondaryKeySearch = null;
         String primaryKeyFieldName = null;
         String deletePrimaryKeyStatement = null;
         String findWherePrimaryKeyStatement = null;
-        String secondarySearchFieldName = null;
         final Method[] declaredMethods = object.getDeclaredMethods();
         final Field[] declaredFields = object.getDeclaredFields();
+
+        List<SecondarySearchFieldBO> secondarySearchFieldBOList = new ArrayList<>();
         
         List<Field> databaseFields = new ArrayList<>();
         for (Field field : declaredFields) {
@@ -84,8 +84,11 @@ public class DAOBuilder {
                 }
 
                 if (searchFieldSingle) {
-                    secondaryKeySearch = String.format(SELECT_SECONDARY, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
-                    secondarySearchFieldName = field.getName();
+                    String secondaryKeySearch = String.format(SELECT_SECONDARY, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
+                    String secondarySearchFieldName = field.getName();
+                    String sqlStatementName =  dbField.searchFieldSqlName();
+                    final Class<?> type = field.getType();
+                    secondarySearchFieldBOList.add(new SecondarySearchFieldBO(secondaryKeySearch, secondarySearchFieldName,sqlStatementName, type));
                 }
             }
         }
@@ -97,9 +100,9 @@ public class DAOBuilder {
         String insertStatement = String.format(INSERT_INTO, "\"+ExampleConstants.TABLE_NAME+\"", columnNames, columnValues);
         String updateStatement = String.format(UPDATE, "\"+ExampleConstants.TABLE_NAME+\"", columnsForUpdate, updateWhereStatement);
 
-        final String implClass = buildJavaClass(newDaoName, newDaoInterfaceName, boName, databaseFields, constantsName, secondarySearchFieldName, primaryKeyFieldName, declaredMethods, object);
-        final String interfaceClass = builderInterfaceClass(newDaoInterfaceName, boName, primaryKeyFieldName, secondarySearchFieldName, object);
-        final String constantsClass = buildMemberConstantsClass(constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondaryKeySearch, updateStatement, findWherePrimaryKeyStatement);
+        final String implClass = buildJavaClass(newDaoName, newDaoInterfaceName, boName, databaseFields, constantsName, secondarySearchFieldBOList, primaryKeyFieldName, declaredMethods, object);
+        final String interfaceClass = builderInterfaceClass(newDaoInterfaceName, boName, primaryKeyFieldName, secondarySearchFieldBOList, object);
+        final String constantsClass = buildMemberConstantsClass(constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondarySearchFieldBOList, updateStatement, findWherePrimaryKeyStatement);
 
         final File baseDir = new File(directory);
         if(!baseDir.exists()) {
@@ -229,13 +232,11 @@ public class DAOBuilder {
         return builder.toString();
     }
 
-    private String buildJavaClass(String newDaoName, String implName, String boName, List<Field> databaseFields, String constantsName, String secondarySearchFieldName, String primaryKeyFieldName, Method[] declaredMethods, Class object) {
+    private String buildJavaClass(String newDaoName, String implName, String boName, List<Field> databaseFields, String constantsName, List<SecondarySearchFieldBO> secondaryFieldList, String primaryKeyFieldName, Method[] declaredMethods, Class object) {
         StringBuilder builder = new StringBuilder();
 
         String s1 = primaryKeyFieldName.substring(0, 1).toUpperCase();
         String primaryKeyFieldInCaps = s1 + primaryKeyFieldName.substring(1, primaryKeyFieldName.length());
-        String s2 = secondarySearchFieldName.substring(0, 1).toUpperCase();
-        String secondaryFieldINCaps = s2 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
 
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
@@ -380,21 +381,33 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t\t return data;\n");
         builder.append("\t}\n");
-        // Secondary value search
-        builder.append("\t@Override");
-        builder.append("\n");
-        builder.append("\t public " + boName + " findBy" + secondaryFieldINCaps + "(String key) {\n");
-        builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
-        builder.append("\n");
-        DatabaseField secondarySearchField = findByFieldFromName(secondarySearchFieldName, databaseFields);
-        builder.append("\t\t parameters.put(" + constantsName + "." + secondarySearchField.name() + ", key);");
-        builder.append("\n");
-        builder.append("\t\t final List<" + boName + "> query = this.jdbcTemplate.query(" + constantsName + ".SELECT_BY_CODE, parameters, this.dataRowMapper);");
-        builder.append("\n");
-        builder.append("\t\t final " + boName + " data = (!query.isEmpty()) ? query.get(0) : null;");
-        builder.append("\n");
-        builder.append("\t\t return data;\n");
-        builder.append("\t}\n");
+        /**
+         * Secondary field search, we loop over the lists and create the correct statements
+         */
+        for (SecondarySearchFieldBO secondarySearchFieldBO: secondaryFieldList
+             ) {
+
+            String type = secondarySearchFieldBO.getType();
+            String sqlStatementName = secondarySearchFieldBO.getSqlStatementName();
+            String secondarySearchFieldName = secondarySearchFieldBO.getFieldName();
+            String s2 = secondarySearchFieldName.substring(0, 1).toUpperCase();
+            String secondaryFieldINCaps = s2 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
+
+            builder.append("\t@Override");
+            builder.append("\n");
+            builder.append("\t public " + boName + " findBy" + secondaryFieldINCaps + "("+type+" key) {\n");
+            builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
+            builder.append("\n");
+            DatabaseField secondarySearchField = findByFieldFromName(secondarySearchFieldName, databaseFields);
+            builder.append("\t\t parameters.put(" + constantsName + "." + secondarySearchField.name() + ", key);");
+            builder.append("\n");
+            builder.append("\t\t final List<" + boName + "> query = this.jdbcTemplate.query(" + constantsName + "."+sqlStatementName+", parameters, this.dataRowMapper);");
+            builder.append("\n");
+            builder.append("\t\t final " + boName + " data = (!query.isEmpty()) ? query.get(0) : null;");
+            builder.append("\n");
+            builder.append("\t\t return data;\n");
+            builder.append("\t}\n");
+        }
         builder.append("\n");
         builder.append("\t private class DataRowMapper implements RowMapper<" + boName + "> {");
         builder.append("\n");
@@ -458,7 +471,7 @@ public class DAOBuilder {
         return null;
     }
 
-    private String buildMemberConstantsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, String secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement) {
+    private String buildMemberConstantsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, List<SecondarySearchFieldBO> secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement) {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
@@ -480,10 +493,15 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\tpublic static final String DELETE_ID_SQL = \"" + deletePrimaryKeyStatement + "\";");
         builder.append("\n");
-        builder.append("\tpublic static final String SELECT_BY_CODE = \"" + secondaryKeySearch + "\";");
-        builder.append("\n");
         builder.append("\tpublic static final String SELECT_BY_ID = \"" + findWherePrimaryKeyStatement + "\";");
         builder.append("\n");
+        for (SecondarySearchFieldBO secondarySearchFieldBO: secondaryKeySearch
+             ) {
+            String sqlStatementName = secondarySearchFieldBO.getSqlStatementName();
+            String sqlStatement = secondarySearchFieldBO.getSqlStatement();
+            builder.append("\tpublic static final String "+sqlStatementName+" = \"" + sqlStatement + "\";");
+            builder.append("\n");
+        }
         for (Field field : databaseFields
         ) {
             DatabaseField dbField = field.getAnnotation(DatabaseField.class);
@@ -495,7 +513,7 @@ public class DAOBuilder {
         return builder.toString();
     }
 
-    private String builderInterfaceClass(String constantClassName, String boName, String primaryKeyFieldName, String secondarySearchFieldName, Class object) {
+    private String builderInterfaceClass(String constantClassName, String boName, String primaryKeyFieldName, List<SecondarySearchFieldBO> secondarySearchList, Class object) {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
@@ -524,16 +542,22 @@ public class DAOBuilder {
         builder.append("\tpublic void update("+boName+" data) throws SQLException;");
         builder.append("\n");
         builder.append("\n");
-        String s1 = secondarySearchFieldName.substring(0, 1).toUpperCase();
-        String capitaliseFirstChar = s1 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
-        builder.append("\t" + boName + " findBy" + capitaliseFirstChar + "(String " + secondarySearchFieldName + ");");
-        builder.append("\n");
-        builder.append("\n");
         String s2 = primaryKeyFieldName.substring(0, 1).toUpperCase();
         String capitalisePrimaryChar = s2 + primaryKeyFieldName.substring(1, primaryKeyFieldName.length());
         builder.append("\t" + boName + " findBy" + capitalisePrimaryChar + "(long id);");
         builder.append("\n");
         builder.append("\n");
+
+        for (SecondarySearchFieldBO secondarySearchFieldBO: secondarySearchList
+             ) {
+            final String type = secondarySearchFieldBO.getType();
+            String secondarySearchFieldName = secondarySearchFieldBO.getFieldName();
+            String s1 = secondarySearchFieldName.substring(0, 1).toUpperCase();
+            String capitaliseFirstChar = s1 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
+            builder.append("\t" + boName + " findBy" + capitaliseFirstChar + "("+type+" " + secondarySearchFieldName + ");");
+            builder.append("\n");
+            builder.append("\n");
+        }
         builder.append("}");
         return builder.toString();
     }

@@ -11,14 +11,14 @@ public class ExampleBO {
 
     @DatabaseField(name = "ID", isPrimaryKey = true)
     private final long id;
-    @DatabaseField(name = "NAME", isSearchFieldSingle = true)
+    @DatabaseField(name = "NAME", isSearchFieldSingle = true, searchFieldSqlName = "SELECT_BY_NAME")
     private final String name;
-    @DatabaseField(name = "SURNAME")
-    private final long surname;
+    @DatabaseField(name = "SURNAME", isSearchFieldSingle = true, searchFieldSqlName = "SELECT_BY_SURNAME")
+    private final String surname;
     @DatabaseField(name = "CREATED")
     private final long created;
 
-    public ExampleBO(long id, String name, long surname, long created) {
+    public ExampleBO(long id, String name, String surname, long created) {
         this.id = id;
         this.name = name;
         this.surname = surname;
@@ -33,7 +33,7 @@ public class ExampleBO {
         return name;
     }
 
-    public long getSurname() {
+    public String getSurname() {
         return surname;
     }
 

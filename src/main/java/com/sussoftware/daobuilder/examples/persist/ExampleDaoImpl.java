@@ -1,6 +1,6 @@
 package com.sussoftware.daobuilder.examples.persist;
 /**
-* Auto generated dao implementation class by DAO-Builder : Mon Nov 27 10:08:02 GMT 2023
+* Auto generated dao implementation class by DAO-Builder : Wed Nov 29 10:07:09 GMT 2023
 */
 
 import com.sussoftware.daobuilder.examples.ExampleBO;
@@ -80,7 +80,15 @@ public class ExampleDaoImpl implements ExampleDao {
 	 public ExampleBO findByName(String key) {
 		 Map<String, Object> parameters = new HashMap<>();
 		 parameters.put(ExampleConstants.NAME, key);
-		 final List<ExampleBO> query = this.jdbcTemplate.query(ExampleConstants.SELECT_BY_CODE, parameters, this.dataRowMapper);
+		 final List<ExampleBO> query = this.jdbcTemplate.query(ExampleConstants.SELECT_BY_NAME, parameters, this.dataRowMapper);
+		 final ExampleBO data = (!query.isEmpty()) ? query.get(0) : null;
+		 return data;
+	}
+	@Override
+	 public ExampleBO findBySurname(String key) {
+		 Map<String, Object> parameters = new HashMap<>();
+		 parameters.put(ExampleConstants.SURNAME, key);
+		 final List<ExampleBO> query = this.jdbcTemplate.query(ExampleConstants.SELECT_BY_SURNAME, parameters, this.dataRowMapper);
 		 final ExampleBO data = (!query.isEmpty()) ? query.get(0) : null;
 		 return data;
 	}
@@ -89,7 +97,7 @@ public class ExampleDaoImpl implements ExampleDao {
 		public ExampleBO mapRow(ResultSet rs, int rowNum) throws SQLException {
 			long id = rs.getLong(ExampleConstants.ID);
 			String name = rs.getString(ExampleConstants.NAME);
-			long surname = rs.getLong(ExampleConstants.SURNAME);
+			String surname = rs.getString(ExampleConstants.SURNAME);
 			long created = rs.getLong(ExampleConstants.CREATED);
 			 return new ExampleBO(id,name,surname,created);
 		}

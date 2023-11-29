@@ -12,5 +12,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DatabaseObject {
+    /**
+     * Name of the database table
+     * @return
+     */
     String tableName();
 }
