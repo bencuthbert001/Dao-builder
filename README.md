@@ -23,7 +23,9 @@ For working example please see ExampleBO.java inside the examples.persist direct
 <br>
 @DatabaseField(name = "ID", isPrimaryKey = true) - This should be placed on the primary key field to generate a primary key statement
 <br><br>
-@DatabaseField(name = "NAME", isSearchFieldSingle = true)  - This should be placed on your secondary search field
+@DatabaseField(name = "NAME", isSearchFieldSingle = true, searchFieldSqlName = "SELECT_BY_SURNAME")  - This should be placed on your secondary search field
+<br>
+When using isSearchFieldSingle = true, you can specify the searchFieldSqlName select statement name to help build more support for multiple field search
 <br><br>
 @DatabaseField(name = "SURNAME")  - This annotates a field as a regular field and is included in create,update,delete,insert
 
