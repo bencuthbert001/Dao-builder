@@ -13,28 +13,18 @@ targetCompatibility = 11
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
 signing {
-   // required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+    // required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
     sign publishing.publications
 }
 
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-}
-
-task javadocJar(type: Jar) {
-    from javadoc
-}
-
-artifacts {
-    archives javadocJar, sourcesJar
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 repositories {
     mavenCentral()
     mavenLocal()
-}
-
-configurations {
 }
 
 dependencies {
@@ -61,7 +51,7 @@ publishing {
 uploadArchives {
     repositories {
         mavenDeployer {
-            //beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
             repository(url: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 authentication(userName: ossrhUsername, password: ossrhPassword)
@@ -100,15 +90,6 @@ uploadArchives {
                 }
             }
         }
-//        repositories {
-//            maven {
-//                url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-//                credentials {
-//                    username = properties.getProperty('ossrhUsername')
-//                    password = properties.getProperty('ossrhPassword')
-//                }
-//            }
-//        }
     }
 }
 
