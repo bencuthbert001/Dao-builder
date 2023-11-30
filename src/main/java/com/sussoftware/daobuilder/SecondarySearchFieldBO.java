@@ -18,14 +18,17 @@ public class SecondarySearchFieldBO {
     private final String fieldName;
     private final String sqlStatementName;
     private final String type;
+    private final boolean shouldReturnMultiple;
 
     public SecondarySearchFieldBO(String sqlStatement, String fieldName, String sqlStatementName,
-                                  Class<?> type
+                                  Class<?> type,
+                                  boolean shouldReturnMultiple
     ) {
         this.sqlStatement = sqlStatement;
         this.fieldName = fieldName;
         this.sqlStatementName = sqlStatementName;
         this.type = initType(type);
+        this.shouldReturnMultiple = shouldReturnMultiple;
     }
 
     private String initType(Class<?> type) {
@@ -57,13 +60,18 @@ public class SecondarySearchFieldBO {
         return type;
     }
 
+    public boolean isShouldReturnMultiple() {
+        return shouldReturnMultiple;
+    }
+
     @Override
     public String toString() {
         return "SecondarySearchFieldBO{" +
                 "sqlStatement='" + sqlStatement + '\'' +
                 ", fieldName='" + fieldName + '\'' +
                 ", sqlStatementName='" + sqlStatementName + '\'' +
-                ", type=" + type +
+                ", type='" + type + '\'' +
+                ", shouldReturnMultiple=" + shouldReturnMultiple +
                 '}';
     }
 }

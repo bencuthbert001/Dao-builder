@@ -32,6 +32,21 @@ public class DAOBuilder {
         String className = args[0];
         String directory = args[1];
         String javaPackage = args[2];
+
+        if(className == null) {
+            System.out.println("missing POJO name! please specify a POJO class com.sussoftware.daobuilder.examples.ExampleBO");
+            System.exit(-1);
+        }
+
+        if(directory == null) {
+            System.out.println("missing export directory! please specify a directory to publish classes to src/main/java/com/sussoftware/daobuilder/examples/persist");
+            System.exit(-1);
+        }
+
+        if(javaPackage == null) {
+            System.out.println("missing export javaPackage! please specify a package com.sussoftware.daobuilder.examples.persist ");
+            System.exit(-1);
+        }
         try {
             Class c = Class.forName(className);
             this.directory = directory;
@@ -61,7 +76,7 @@ public class DAOBuilder {
         String constantsName = name + "Constants";
         final DatabaseObject annotation = (DatabaseObject) object.getDeclaredAnnotation(DatabaseObject.class);
         final String tableName = annotation.tableName();
-        String selectAllStatement = String.format(SELECT_ALL, "\"+ExampleConstants.TABLE_NAME+\"");
+        String selectAllStatement = String.format(SELECT_ALL, "\"+"+constantsName+".TABLE_NAME+\"");
         String primaryKeyFieldName = null;
         String deletePrimaryKeyStatement = null;
         String findWherePrimaryKeyStatement = null;
@@ -75,20 +90,21 @@ public class DAOBuilder {
             if (field.isAnnotationPresent(DatabaseField.class)) {
                 DatabaseField dbField = field.getAnnotation(DatabaseField.class);
                 databaseFields.add(field);
-                Boolean primaryKey = dbField.isPrimaryKey();
-                Boolean searchFieldSingle = dbField.isSearchFieldSingle();
+                boolean primaryKey = dbField.isPrimaryKey();
+                boolean isSearchField = dbField.isSearchField();
                 if (primaryKey) {
-                    deletePrimaryKeyStatement = String.format(DELETE_WHERE_ID, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
-                    findWherePrimaryKeyStatement = String.format(FIND_WHERE_ID, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
+                    deletePrimaryKeyStatement = String.format(DELETE_WHERE_ID, "\"+"+constantsName+".TABLE_NAME+\"", dbField.name(), dbField.name());
+                    findWherePrimaryKeyStatement = String.format(FIND_WHERE_ID, "\"+"+constantsName+".TABLE_NAME+\"", dbField.name(), dbField.name());
                     primaryKeyFieldName = field.getName();
                 }
 
-                if (searchFieldSingle) {
-                    String secondaryKeySearch = String.format(SELECT_SECONDARY, "\"+ExampleConstants.TABLE_NAME+\"", dbField.name(), dbField.name());
+                if (isSearchField) {
+                    boolean shouldReturnMultiple = dbField.isSearchFieldMultiple();
+                    String secondaryKeySearch = String.format(SELECT_SECONDARY, "\"+"+constantsName+".TABLE_NAME+\"", dbField.name(), dbField.name());
                     String secondarySearchFieldName = field.getName();
                     String sqlStatementName =  dbField.searchFieldSqlName();
                     final Class<?> type = field.getType();
-                    secondarySearchFieldBOList.add(new SecondarySearchFieldBO(secondaryKeySearch, secondarySearchFieldName,sqlStatementName, type));
+                    secondarySearchFieldBOList.add(new SecondarySearchFieldBO(secondaryKeySearch, secondarySearchFieldName, sqlStatementName, type, shouldReturnMultiple));
                 }
             }
         }
@@ -97,8 +113,8 @@ public class DAOBuilder {
         String columnValues = getColumnValuesFromFields(databaseFields);
         String columnsForUpdate = getColumnsForUpdate(databaseFields);
         String updateWhereStatement = getUpdateWhereStatement(databaseFields);
-        String insertStatement = String.format(INSERT_INTO, "\"+ExampleConstants.TABLE_NAME+\"", columnNames, columnValues);
-        String updateStatement = String.format(UPDATE, "\"+ExampleConstants.TABLE_NAME+\"", columnsForUpdate, updateWhereStatement);
+        String insertStatement = String.format(INSERT_INTO, "\"+"+constantsName+".TABLE_NAME+\"", columnNames, columnValues);
+        String updateStatement = String.format(UPDATE, "\"+"+constantsName+".TABLE_NAME+\"", columnsForUpdate, updateWhereStatement);
 
         final String implClass = buildJavaClass(newDaoName, newDaoInterfaceName, boName, databaseFields, constantsName, secondarySearchFieldBOList, primaryKeyFieldName, declaredMethods, object);
         final String interfaceClass = builderInterfaceClass(newDaoInterfaceName, boName, primaryKeyFieldName, secondarySearchFieldBOList, object);
@@ -240,12 +256,6 @@ public class DAOBuilder {
 
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
-        builder.append("/**");
-        builder.append("\n");
-        builder.append("* Auto generated dao implementation class by DAO-Builder : "+new Date());
-        builder.append("\n");
-        builder.append("*/");
-        builder.append("\n");
         builder.append("\n");
         builder.append("import "+object.getName()+";\n");
         builder.append("import java.sql.ResultSet;\n");
@@ -259,6 +269,13 @@ public class DAOBuilder {
         builder.append("import org.slf4j.LoggerFactory;\n");
         builder.append("import org.springframework.jdbc.core.RowMapper;\n");
         builder.append("import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;\n");
+        builder.append("\n");
+        builder.append("/**");
+        builder.append("\n");
+        builder.append("* Auto generated dao implementation class by DAO-Builder : "+new Date());
+        builder.append("\n");
+        builder.append("*/");
+        builder.append("\n");
         builder.append("\n");
         builder.append("public class " + newDaoName + " implements " + implName + " {");
         builder.append("\n");
@@ -309,7 +326,7 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t\t this.jdbcTemplate.update(" + constantsName + ".INSERT_STATEMENT, parameters);");
         builder.append("\n");
-        builder.append("\t return true;\n");
+        builder.append("\t\t return true;\n");
         builder.append("\t}\n");
         // Updated method
         builder.append("\t@Override");
@@ -392,24 +409,39 @@ public class DAOBuilder {
             String secondarySearchFieldName = secondarySearchFieldBO.getFieldName();
             String s2 = secondarySearchFieldName.substring(0, 1).toUpperCase();
             String secondaryFieldINCaps = s2 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
+            boolean shouldReturnMultiple = secondarySearchFieldBO.isShouldReturnMultiple();
 
             builder.append("\t@Override");
             builder.append("\n");
-            builder.append("\t public " + boName + " findBy" + secondaryFieldINCaps + "("+type+" key) {\n");
-            builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
-            builder.append("\n");
-            DatabaseField secondarySearchField = findByFieldFromName(secondarySearchFieldName, databaseFields);
-            builder.append("\t\t parameters.put(" + constantsName + "." + secondarySearchField.name() + ", key);");
-            builder.append("\n");
-            builder.append("\t\t final List<" + boName + "> query = this.jdbcTemplate.query(" + constantsName + "."+sqlStatementName+", parameters, this.dataRowMapper);");
-            builder.append("\n");
-            builder.append("\t\t final " + boName + " data = (!query.isEmpty()) ? query.get(0) : null;");
-            builder.append("\n");
-            builder.append("\t\t return data;\n");
-            builder.append("\t}\n");
+            if(!shouldReturnMultiple) {
+                builder.append("\t public " + boName + " findBy" + secondaryFieldINCaps + "("+type+" key) {\n");
+                builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
+                builder.append("\n");
+                DatabaseField secondarySearchField = findByFieldFromName(secondarySearchFieldName, databaseFields);
+                builder.append("\t\t parameters.put(" + constantsName + "." + secondarySearchField.name() + ", key);");
+                builder.append("\n");
+                builder.append("\t\t final List<" + boName + "> query = this.jdbcTemplate.query(" + constantsName + "."+sqlStatementName+", parameters, this.dataRowMapper);");
+                builder.append("\n");
+                builder.append("\t\t final " + boName + " data = (!query.isEmpty()) ? query.get(0) : null;");
+                builder.append("\n");
+                builder.append("\t\t return data;\n");
+                builder.append("\t}\n");
+            } else {
+                builder.append("\t public List<" + boName + "> findBy" + secondaryFieldINCaps + "("+type+" key) {\n");
+                builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
+                builder.append("\n");
+                DatabaseField secondarySearchField = findByFieldFromName(secondarySearchFieldName, databaseFields);
+                builder.append("\t\t parameters.put(" + constantsName + "." + secondarySearchField.name() + ", key);");
+                builder.append("\n");
+                builder.append("\t\t final List<" + boName + "> query = this.jdbcTemplate.query(" + constantsName + "."+sqlStatementName+", parameters, this.dataRowMapper);");
+                builder.append("\n");
+                builder.append("\t\t return query;\n");
+                builder.append("\t}\n");
+            }
         }
         builder.append("\n");
         builder.append("\t private class DataRowMapper implements RowMapper<" + boName + "> {");
+        builder.append("\n");
         builder.append("\n");
         builder.append("\t\tpublic " + boName + " mapRow(ResultSet rs, int rowNum) throws SQLException {");
         builder.append("\n");
@@ -438,7 +470,7 @@ public class DAOBuilder {
         String constructureValueWithComma = constructorBuilder.toString();
         // Take out the last ,
         String constructureValue = constructureValueWithComma.substring(0, constructureValueWithComma.length() -1);
-        builder.append("\t\t\t return new " + boName + "("+constructureValue+");");
+        builder.append("\t\t\treturn new " + boName + "("+constructureValue+");");
         builder.append("\n\t\t}");
         builder.append("\n");
         builder.append("\t}");
@@ -447,39 +479,17 @@ public class DAOBuilder {
         return builder.toString();
     }
 
-    private Method findMethodForField(Field field, Method[] declaredMethods) {
-        for (int i = 0; i < declaredMethods.length; i++) {
-            final Method declaredMethod = declaredMethods[i];
-            final String methodNameLowerCase = declaredMethod.getName().toLowerCase();
-            final String fieldNameLowerCase = field.getName().toLowerCase();
-            if (methodNameLowerCase.contains(fieldNameLowerCase)) {
-                return declaredMethod;
-            }
-        }
-
-        return null;
-    }
-
-    private DatabaseField findByFieldFromName(String name, List<Field> databaseFields) {
-        for (Field dbField : databaseFields
-        ) {
-            if (dbField.getName().equals(name)) {
-                return dbField.getAnnotation(DatabaseField.class);
-            }
-        }
-
-        return null;
-    }
-
     private String buildMemberConstantsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, List<SecondarySearchFieldBO> secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement) {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
+        builder.append("\n");
         builder.append("/**");
         builder.append("\n");
-        builder.append("* Auto generated dao class by DAO-BUILDER: "+new Date());
+        builder.append("* Auto generated dao implementation class by DAO-Builder : "+new Date());
         builder.append("\n");
         builder.append("*/");
+        builder.append("\n");
         builder.append("\n");
         builder.append("public class " + constantClassName + " {");
         builder.append("\n");
@@ -517,15 +527,15 @@ public class DAOBuilder {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
-        builder.append("/**");
-        builder.append("\n");
-        builder.append("* Auto generated dao class by DAO-Builder: "+new Date());
-        builder.append("\n");
-        builder.append("*/");
-        builder.append("\n");
         builder.append("import "+object.getName()+";\n");
         builder.append("import java.sql.SQLException;\n");
         builder.append("import java.util.List;\n");
+        builder.append("\n");
+        builder.append("/**");
+        builder.append("\n");
+        builder.append("* Auto generated dao implementation class by DAO-Builder : "+new Date());
+        builder.append("\n");
+        builder.append("*/");
         builder.append("\n");
         builder.append("public interface " + constantClassName + " {");
         builder.append("\n");
@@ -544,7 +554,7 @@ public class DAOBuilder {
         builder.append("\n");
         String s2 = primaryKeyFieldName.substring(0, 1).toUpperCase();
         String capitalisePrimaryChar = s2 + primaryKeyFieldName.substring(1, primaryKeyFieldName.length());
-        builder.append("\t" + boName + " findBy" + capitalisePrimaryChar + "(long id);");
+        builder.append("\tpublic " + boName + " findBy" + capitalisePrimaryChar + "(long id);");
         builder.append("\n");
         builder.append("\n");
 
@@ -554,11 +564,41 @@ public class DAOBuilder {
             String secondarySearchFieldName = secondarySearchFieldBO.getFieldName();
             String s1 = secondarySearchFieldName.substring(0, 1).toUpperCase();
             String capitaliseFirstChar = s1 + secondarySearchFieldName.substring(1, secondarySearchFieldName.length());
-            builder.append("\t" + boName + " findBy" + capitaliseFirstChar + "("+type+" " + secondarySearchFieldName + ");");
+            boolean shouldReturnMultiple = secondarySearchFieldBO.isShouldReturnMultiple();
+            if(!shouldReturnMultiple) {
+                builder.append("\tpublic " + boName + " findBy" + capitaliseFirstChar + "("+type+" " + secondarySearchFieldName + ");");
+            }else {
+                builder.append("\tpublic List<" + boName + "> findBy" + capitaliseFirstChar + "("+type+" " + secondarySearchFieldName + ");");
+            }
             builder.append("\n");
             builder.append("\n");
         }
         builder.append("}");
         return builder.toString();
+    }
+
+
+    private Method findMethodForField(Field field, Method[] declaredMethods) {
+        for (int i = 0; i < declaredMethods.length; i++) {
+            final Method declaredMethod = declaredMethods[i];
+            final String methodNameLowerCase = declaredMethod.getName().toLowerCase();
+            final String fieldNameLowerCase = field.getName().toLowerCase();
+            if (methodNameLowerCase.contains(fieldNameLowerCase)) {
+                return declaredMethod;
+            }
+        }
+
+        return null;
+    }
+
+    private DatabaseField findByFieldFromName(String name, List<Field> databaseFields) {
+        for (Field dbField : databaseFields
+        ) {
+            if (dbField.getName().equals(name)) {
+                return dbField.getAnnotation(DatabaseField.class);
+            }
+        }
+
+        return null;
     }
 }

@@ -11,9 +11,9 @@ public class ExampleBO {
 
     @DatabaseField(name = "ID", isPrimaryKey = true)
     private final long id;
-    @DatabaseField(name = "NAME", isSearchFieldSingle = true, searchFieldSqlName = "SELECT_BY_NAME")
+    @DatabaseField(name = "NAME", isSearchField = true, isSearchFieldMultiple = true, searchFieldSqlName = "SELECT_BY_NAME")
     private final String name;
-    @DatabaseField(name = "SURNAME", isSearchFieldSingle = true, searchFieldSqlName = "SELECT_BY_SURNAME")
+    @DatabaseField(name = "SURNAME", isSearchField = true, searchFieldSqlName = "SELECT_BY_SURNAME")
     private final String surname;
     @DatabaseField(name = "CREATED")
     private final long created;

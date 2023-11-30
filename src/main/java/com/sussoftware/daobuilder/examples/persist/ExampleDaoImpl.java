@@ -1,7 +1,4 @@
 package com.sussoftware.daobuilder.examples.persist;
-/**
-* Auto generated dao implementation class by DAO-Builder : Wed Nov 29 10:07:09 GMT 2023
-*/
 
 import com.sussoftware.daobuilder.examples.ExampleBO;
 import java.sql.ResultSet;
@@ -15,6 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+
+/**
+* Auto generated dao implementation class by DAO-Builder : Thu Nov 30 08:38:53 GMT 2023
+*/
 
 public class ExampleDaoImpl implements ExampleDao {
 
@@ -39,7 +40,7 @@ public class ExampleDaoImpl implements ExampleDao {
 		 parameters.put(ExampleConstants.CREATED, from);
 
 		 this.jdbcTemplate.update(ExampleConstants.INSERT_STATEMENT, parameters);
-	 return true;
+		 return true;
 	}
 	@Override
 	 public void update(ExampleBO data) throws SQLException {
@@ -77,12 +78,11 @@ public class ExampleDaoImpl implements ExampleDao {
 		 return data;
 	}
 	@Override
-	 public ExampleBO findByName(String key) {
+	 public List<ExampleBO> findByName(String key) {
 		 Map<String, Object> parameters = new HashMap<>();
 		 parameters.put(ExampleConstants.NAME, key);
 		 final List<ExampleBO> query = this.jdbcTemplate.query(ExampleConstants.SELECT_BY_NAME, parameters, this.dataRowMapper);
-		 final ExampleBO data = (!query.isEmpty()) ? query.get(0) : null;
-		 return data;
+		 return query;
 	}
 	@Override
 	 public ExampleBO findBySurname(String key) {
@@ -94,12 +94,13 @@ public class ExampleDaoImpl implements ExampleDao {
 	}
 
 	 private class DataRowMapper implements RowMapper<ExampleBO> {
+
 		public ExampleBO mapRow(ResultSet rs, int rowNum) throws SQLException {
 			long id = rs.getLong(ExampleConstants.ID);
 			String name = rs.getString(ExampleConstants.NAME);
 			String surname = rs.getString(ExampleConstants.SURNAME);
 			long created = rs.getLong(ExampleConstants.CREATED);
-			 return new ExampleBO(id,name,surname,created);
+			return new ExampleBO(id,name,surname,created);
 		}
 	}
 }

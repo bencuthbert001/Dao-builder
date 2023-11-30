@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Anotation to help describe database
+ * Annotation to help describe database
  * objects, so that we can generate automatic DAO code
  */
 @Target(ElementType.TYPE)
@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 public @interface DatabaseObject {
     /**
      * Name of the database table
-     * @return
+     * @return String
      */
     String tableName();
 }

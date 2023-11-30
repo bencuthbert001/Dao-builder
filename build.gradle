@@ -1,25 +1,37 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'maven'
+    id 'signing'
 }
 
-group 'com.sussoftware'
+group 'io.github.susspectsoftware-dev'
 
 sourceCompatibility = 11
 targetCompatibility = 11
 
+ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
+
+signing {
+   // required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+    sign publishing.publications
+}
+
 task sourcesJar(type: Jar) {
     from sourceSets.main.allJava
-    classifier = 'sources'
 }
 
 task javadocJar(type: Jar) {
     from javadoc
-    classifier = 'javadoc'
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
 }
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 configurations {
@@ -43,6 +55,60 @@ publishing {
         maven {
             url 'repo'
         }
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            //beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://s01.oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'DAO Builder'
+                packaging 'jar'
+                // optionally artifactId can be defined here
+                description 'An application that can be used to generate database code from POJO for spring jdbc.'
+                url 'https://github.com/susspectsoftware-dev/dao-builder'
+
+                scm {
+                    connection 'scm:git:git:github.com/susspectsoftware-dev/dao-builder.git'
+                    developerConnection 'scm:git:ssh://github.com/susspectsoftware-dev/dao-builder.git'
+                    url 'https://github.com/susspectsoftware-dev/dao-builder/'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'io.github.susspectsoftware-dev'
+                        name 'David Brown'
+                        email 'davidbrown@sussoftware.com'
+                    }
+                }
+            }
+        }
+//        repositories {
+//            maven {
+//                url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+//                credentials {
+//                    username = properties.getProperty('ossrhUsername')
+//                    password = properties.getProperty('ossrhPassword')
+//                }
+//            }
+//        }
     }
 }
 

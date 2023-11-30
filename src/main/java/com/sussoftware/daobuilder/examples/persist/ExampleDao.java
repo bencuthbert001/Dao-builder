@@ -1,11 +1,11 @@
 package com.sussoftware.daobuilder.examples.persist;
-/**
-* Auto generated dao class by DAO-Builder: Wed Nov 29 10:07:09 GMT 2023
-*/
 import com.sussoftware.daobuilder.examples.ExampleBO;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+* Auto generated dao implementation class by DAO-Builder : Thu Nov 30 08:38:53 GMT 2023
+*/
 public interface ExampleDao {
 
 	public boolean create(ExampleBO data) throws SQLException;
@@ -16,10 +16,10 @@ public interface ExampleDao {
 
 	public void update(ExampleBO data) throws SQLException;
 
-	ExampleBO findById(long id);
+	public ExampleBO findById(long id);
 
-	ExampleBO findByName(String name);
+	public List<ExampleBO> findByName(String name);
 
-	ExampleBO findBySurname(String surname);
+	public ExampleBO findBySurname(String surname);
 
 }

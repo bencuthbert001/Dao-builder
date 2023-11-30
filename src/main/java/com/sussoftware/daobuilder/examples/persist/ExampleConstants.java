@@ -1,7 +1,9 @@
 package com.sussoftware.daobuilder.examples.persist;
+
 /**
-* Auto generated dao class by DAO-BUILDER: Wed Nov 29 10:07:12 GMT 2023
+* Auto generated dao implementation class by DAO-Builder : Thu Nov 30 08:38:53 GMT 2023
 */
+
 public class ExampleConstants {
 	public static final String TABLE_NAME = "EXAMPLE_TABLE";
 	public static final String INSERT_STATEMENT = "INSERT INTO "+ExampleConstants.TABLE_NAME+"(ID,NAME,SURNAME,CREATED) VALUES(:ID,:NAME,:SURNAME,:CREATED)";
