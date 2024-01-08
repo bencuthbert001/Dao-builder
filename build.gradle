@@ -18,8 +18,8 @@ java {
 }
 
 configurations {
-//    releaseArtifacts
 }
+
 signing {
     sign configurations.archives
 }
@@ -28,12 +28,6 @@ artifacts {
     archives javadocJar
     archives sourcesJar
     archives jar
-//    releaseArtifacts file("build/libs/${name}-${version}-javadoc.jar.asc")
-//    releaseArtifacts file("build/libs/${name}-${version}-sources.jar.asc")
-//    releaseArtifacts file("build/libs/${name}-${version}.jar.asc")
-//    releaseArtifacts file("build/libs/${name}-${version}-javadoc.jar")
-//    releaseArtifacts file("build/libs/${name}-${version}-sources.jar")
-//    releaseArtifacts file("build/libs/${name}-${version}.jar")
 }
 
 repositories {
