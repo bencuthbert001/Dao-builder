@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.springframework.util.StringUtils;
 
 /**
  * This is a simple DAO class builder, that will create a java class
@@ -23,34 +24,21 @@ public class DAOBuilder {
     private final static String FIND_WHERE_ID = "SELECT * FROM %s WHERE %s = :%s";
     private final static String INSERT_INTO = "INSERT INTO %s(%s) VALUES(%s)";
     private final static String UPDATE = "UPDATE %s SET %s WHERE %s";
+    private boolean shouldCreateArchive;
 
     public DAOBuilder() {
 
     }
 
-    public void start(String args[]) {
-        String className = args[0];
-        String directory = args[1];
-        String javaPackage = args[2];
-
-        if(className == null) {
-            System.out.println("missing POJO name! please specify a POJO class com.sussoftware.daobuilder.examples.ExampleBO");
-            System.exit(-1);
-        }
-
-        if(directory == null) {
-            System.out.println("missing export directory! please specify a directory to publish classes to src/main/java/com/sussoftware/daobuilder/examples/persist");
-            System.exit(-1);
-        }
-
-        if(javaPackage == null) {
-            System.out.println("missing export javaPackage! please specify a package com.sussoftware.daobuilder.examples.persist ");
-            System.exit(-1);
+    public void start(String className, String directory, String packageName, String journal) {
+        this.shouldCreateArchive = false;
+        if(journal != null) {
+            shouldCreateArchive = true;
         }
         try {
             Class c = Class.forName(className);
             this.directory = directory;
-            this.PACKAGE_NAME = javaPackage;
+            this.PACKAGE_NAME = packageName;
             buildDAO(c);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -58,11 +46,31 @@ public class DAOBuilder {
     }
 
     public static void main(String args[]) {
-        if(args.length != 3) {
-            System.out.println("Invalid arguments, className,directory,javaPackage");
+        final String className = System.getProperty("className");
+        if(className == null) {
+            System.out.println("invalid className property, please specify");
             System.exit(-1);
         }
-       new DAOBuilder().start(args);
+
+        final String directory = System.getProperty("directory");
+        if(directory == null) {
+            System.out.println("invalid directory property, please specify");
+            System.exit(-1);
+        }
+
+        final String packageName = System.getProperty("packageName");
+        if(packageName == null) {
+            System.out.println("invalid packageName property, please specify");
+            System.exit(-1);
+        }
+
+        final String journal = System.getProperty("journal");
+        if(journal == null) {
+            System.out.println("invalid journal property, please specify");
+            System.exit(-1);
+        }
+
+       new DAOBuilder().start(className, directory, packageName, journal);
     }
 
     public final void buildDAO(Class object) {
@@ -116,9 +124,14 @@ public class DAOBuilder {
         String insertStatement = String.format(INSERT_INTO, "\"+"+constantsName+".TABLE_NAME+\"", columnNames, columnValues);
         String updateStatement = String.format(UPDATE, "\"+"+constantsName+".TABLE_NAME+\"", columnsForUpdate, updateWhereStatement);
 
+        String insertJournal = null;
+        if(this.shouldCreateArchive) {
+            insertJournal = String.format(INSERT_INTO, "\"+"+constantsName+".TABLE_NAME_JOURNAL+\"", columnNames, columnValues);
+        }
+
         final String implClass = buildJavaClass(newDaoName, newDaoInterfaceName, boName, databaseFields, constantsName, secondarySearchFieldBOList, primaryKeyFieldName, declaredMethods, object);
         final String interfaceClass = builderInterfaceClass(newDaoInterfaceName, boName, primaryKeyFieldName, secondarySearchFieldBOList, object);
-        final String constantsClass = buildMemberConstantsClass(constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondarySearchFieldBOList, updateStatement, findWherePrimaryKeyStatement);
+        final String constantsClass = buildMemberConstantsClass(this.shouldCreateArchive, constantsName, tableName, databaseFields, insertStatement, selectAllStatement, deletePrimaryKeyStatement, secondarySearchFieldBOList, updateStatement, findWherePrimaryKeyStatement, insertJournal);
 
         final File baseDir = new File(directory);
         if(!baseDir.exists()) {
@@ -285,6 +298,7 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\tprivate final NamedParameterJdbcTemplate jdbcTemplate;");
         builder.append("\n");
+        builder.append("\n");
         builder.append("\tprivate final DataRowMapper dataRowMapper;");
         builder.append("\n");
         builder.append("\n");
@@ -299,7 +313,7 @@ public class DAOBuilder {
         builder.append("\t\t logger.debug(\"Creating row {}\",data);\n");
         builder.append("\t\t final long l = data.getCreated();");
         builder.append("\n");
-        builder.append("\t\t final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));");
+        builder.append("\t\t final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));");
         builder.append("\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
@@ -310,7 +324,7 @@ public class DAOBuilder {
             String dbNameFieldAnnotation = dbField.name();
             final String databaseFieldName = dbField.name();
             if(dbNameFieldAnnotation.contains("CREATED")) {
-                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", from);");
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", fromCreated);");
                 builder.append("\n");
                 continue;
             }
@@ -328,6 +342,42 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t\t return true;\n");
         builder.append("\t}\n");
+        builder.append("\n");
+        if(this.shouldCreateArchive) {
+            builder.append("\t public boolean journal(" + boName + " data) throws SQLException {\n");
+            builder.append("\t\t logger.debug(\"Creating row {}\",data);\n");
+            builder.append("\t\t final long l = data.getCreated();");
+            builder.append("\n");
+            builder.append("\t\t final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));");
+            builder.append("\n");
+            builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
+            builder.append("\n");
+
+            for (Field field : databaseFields) {
+                DatabaseField dbField = field.getAnnotation(DatabaseField.class);
+                Method method = findMethodForField(field, declaredMethods);
+                String dbNameFieldAnnotation = dbField.name();
+                final String databaseFieldName = dbField.name();
+                if(dbNameFieldAnnotation.contains("CREATED")) {
+                    builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", fromCreated);");
+                    builder.append("\n");
+                    continue;
+                }
+                if (method != null) {
+                    builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data." + method.getName() + "());");
+                    builder.append("\n");
+                } else {
+                    builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data.getValue());");
+                    builder.append("\n");
+
+                }
+            }
+        }
+        builder.append("\n");
+        builder.append("\t\t this.jdbcTemplate.update(" + constantsName + ".INSERT_STATEMENT_JOURNAL, parameters);");
+        builder.append("\n");
+        builder.append("\t\t return true;\n");
+        builder.append("\t}\n");
         // Updated method
         builder.append("\t@Override");
         builder.append("\n");
@@ -335,7 +385,7 @@ public class DAOBuilder {
         builder.append("\t\t logger.debug(\"Updating row {}\",data);\n");
         builder.append("\t\t final long l = data.getCreated();");
         builder.append("\n");
-        builder.append("\t\t final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));");
+        builder.append("\t\t final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));");
         builder.append("\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
@@ -347,7 +397,7 @@ public class DAOBuilder {
             final String databaseFieldName = dbField.name();
 
             if(dbNameFieldAnnotation.contains("CREATED")) {
-                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", from);");
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", fromCreated);");
                 builder.append("\n");
                 continue;
             }
@@ -479,7 +529,7 @@ public class DAOBuilder {
         return builder.toString();
     }
 
-    private String buildMemberConstantsClass(String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, List<SecondarySearchFieldBO> secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement) {
+    private String buildMemberConstantsClass(boolean shouldCreateArchive, String constantClassName, String tableName, List<Field> databaseFields, String insertStatement, String selectAllStatement, String deletePrimaryKeyStatement, List<SecondarySearchFieldBO> secondaryKeySearch, String updateStatement, String findWherePrimaryKeyStatement, String insertJournal) {
         StringBuilder builder = new StringBuilder();
         builder.append("package "+PACKAGE_NAME+";");
         builder.append("\n");
@@ -495,8 +545,16 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\tpublic static final String TABLE_NAME = \"" + tableName + "\";");
         builder.append("\n");
+        if(shouldCreateArchive) {
+            builder.append("\tpublic static final String TABLE_NAME_JOURNAL = \"" + tableName + "_JOURNAL\";");
+        }
+        builder.append("\n");
         builder.append("\tpublic static final String INSERT_STATEMENT = \"" + insertStatement + "\";");
         builder.append("\n");
+        if(this.shouldCreateArchive) {
+            builder.append("\n");
+            builder.append("\tpublic static final String INSERT_STATEMENT_JOURNAL = \"" + insertJournal + "\";");
+        }
         builder.append("\tpublic static final String UPDATE_STATEMENT = \"" + updateStatement + "\";");
         builder.append("\n");
         builder.append("\tpublic static final String SELECT_ALL_SQL = \"" + selectAllStatement + "\";");
@@ -543,6 +601,11 @@ public class DAOBuilder {
         builder.append("\tpublic boolean create(" + boName + " data) throws SQLException;");
         builder.append("\n");
         builder.append("\n");
+        if(this.shouldCreateArchive) {
+            builder.append("\tpublic boolean journal(" + boName + " data) throws SQLException;");
+            builder.append("\n");
+            builder.append("\n");
+        }
         builder.append("\tpublic List<" + boName + "> findAll();");
         builder.append("\n");
         builder.append("\n");

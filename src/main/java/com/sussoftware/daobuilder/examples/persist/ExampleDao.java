@@ -4,11 +4,13 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Thu Nov 30 08:38:53 GMT 2023
+* Auto generated dao implementation class by DAO-Builder : Mon Jan 08 10:52:08 GMT 2024
 */
 public interface ExampleDao {
 
 	public boolean create(ExampleBO data) throws SQLException;
+
+	public boolean journal(ExampleBO data) throws SQLException;
 
 	public List<ExampleBO> findAll();
 

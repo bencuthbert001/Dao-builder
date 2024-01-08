@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Thu Nov 30 08:38:53 GMT 2023
+* Auto generated dao implementation class by DAO-Builder : Mon Jan 08 10:52:08 GMT 2024
 */
 
 public class ExampleDaoImpl implements ExampleDao {
@@ -22,6 +22,7 @@ public class ExampleDaoImpl implements ExampleDao {
 	private static final Logger logger = LoggerFactory.getLogger(ExampleDaoImpl.class);
 
 	private final NamedParameterJdbcTemplate jdbcTemplate;
+
 	private final DataRowMapper dataRowMapper;
 
 	public ExampleDaoImpl(NamedParameterJdbcTemplate jdbcTemplate) {
@@ -32,26 +33,40 @@ public class ExampleDaoImpl implements ExampleDao {
 	 public boolean create(ExampleBO data) throws SQLException {
 		 logger.debug("Creating row {}",data);
 		 final long l = data.getCreated();
-		 final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));
+		 final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));
 		 Map<String, Object> parameters = new HashMap<>();
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
-		 parameters.put(ExampleConstants.CREATED, from);
+		 parameters.put(ExampleConstants.CREATED, fromCreated);
 
 		 this.jdbcTemplate.update(ExampleConstants.INSERT_STATEMENT, parameters);
+		 return true;
+	}
+
+	 public boolean journal(ExampleBO data) throws SQLException {
+		 logger.debug("Creating row {}",data);
+		 final long l = data.getCreated();
+		 final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));
+		 Map<String, Object> parameters = new HashMap<>();
+		 parameters.put(ExampleConstants.ID, data.getId());
+		 parameters.put(ExampleConstants.NAME, data.getName());
+		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
+		 parameters.put(ExampleConstants.CREATED, fromCreated);
+
+		 this.jdbcTemplate.update(ExampleConstants.INSERT_STATEMENT_JOURNAL, parameters);
 		 return true;
 	}
 	@Override
 	 public void update(ExampleBO data) throws SQLException {
 		 logger.debug("Updating row {}",data);
 		 final long l = data.getCreated();
-		 final Timestamp from = Timestamp.from(Instant.ofEpochMilli(l));
+		 final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));
 		 Map<String, Object> parameters = new HashMap<>();
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
-		 parameters.put(ExampleConstants.CREATED, from);
+		 parameters.put(ExampleConstants.CREATED, fromCreated);
 
 		 this.jdbcTemplate.update(ExampleConstants.UPDATE_STATEMENT, parameters);
 	}

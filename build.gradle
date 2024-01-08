@@ -12,20 +12,28 @@ targetCompatibility = 11
 
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 
-signing {
-    // required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
-    sign publishing.publications
-}
-
 java {
     withJavadocJar()
     withSourcesJar()
 }
 
+configurations {
+//    releaseArtifacts
+}
+signing {
+    sign configurations.archives
+}
+
 artifacts {
-    archives jar
-    archives sourcesJar
     archives javadocJar
+    archives sourcesJar
+    archives jar
+//    releaseArtifacts file("build/libs/${name}-${version}-javadoc.jar.asc")
+//    releaseArtifacts file("build/libs/${name}-${version}-sources.jar.asc")
+//    releaseArtifacts file("build/libs/${name}-${version}.jar.asc")
+//    releaseArtifacts file("build/libs/${name}-${version}-javadoc.jar")
+//    releaseArtifacts file("build/libs/${name}-${version}-sources.jar")
+//    releaseArtifacts file("build/libs/${name}-${version}.jar")
 }
 
 repositories {
@@ -38,30 +46,10 @@ dependencies {
     implementation 'org.springframework:spring-jdbc:5.3.16'
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            artifact(sourcesJar) {
-                classifier = 'sources'
-            }
-            artifact(javadocJar) {
-                classifier = 'javadoc'
-            }
-        }
-    }
-    repositories {
-        maven {
-            url 'repo'
-        }
-    }
-}
-
 uploadArchives {
     repositories {
         mavenDeployer {
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
             repository(url: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 authentication(userName: ossrhUsername, password: ossrhPassword)
             }
