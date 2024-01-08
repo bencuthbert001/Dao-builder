@@ -19,7 +19,7 @@ Replace spring-boot with whatever JDBC library you require.
 <br>
 For working example please see ExampleBO.java inside the examples.persist directory
 <br><br>
-<b>Annotations:</b><br>
+<h2>Annotations:</h2>
 <br>
 @DatabaseField(name = "ID", isPrimaryKey = true) - This should be placed on the primary key field to generate a primary key statement
 <br><br>
@@ -40,7 +40,7 @@ Running this from IntelliJ or Eclipse you need the following setup:
 <br>
 main class: com.sussoftware.daobuilder.DAOBuilder
 <br>
-<b>Example JVM parameters:<b>
+<h2>Example JVM parameters:</h2>
 <br>
 -DclassName="com.sussoftware.daobuilder.examples.ExampleBO"
 <br>
@@ -51,3 +51,7 @@ main class: com.sussoftware.daobuilder.DAOBuilder
 -Djournal=true
 <br>
 Note: -Djournal=true is optional if set, then a new method to create a journal of the table will be added
+<br>
+<h2>Gradle</h2>
+Gradle: implementation 'io.github.susspectsoftware-dev:dao-builder:1.11.0'
+<br>
