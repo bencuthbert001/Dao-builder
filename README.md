@@ -34,3 +34,20 @@ To the build create a List of objects on a return statement simply specify isSea
 <br><br>
 @DatabaseField(name = "NAME", isSearchField = true, isSearchFieldMultiple = true, searchFieldSqlName = "SELECT_BY_NAME")
 private final String name;
+<br>
+<br>
+Running this from IntelliJ or Eclipse you need the following setup:
+<br>
+main class: com.sussoftware.daobuilder.DAOBuilder
+<br>
+<b>Example JVM parameters:<b>
+<br>
+-DclassName="com.sussoftware.daobuilder.examples.ExampleBO"
+<br>
+-Ddirectory="src/main/java/com/sussoftware/daobuilder/examples/persist"
+<br>
+-DpackageName="com.sussoftware.daobuilder.examples.persist"
+<br>
+-Djournal=true
+<br>
+Note: -Djournal=true is optional if set, then a new method to create a journal of the table will be added
