@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Mon Jan 08 10:52:08 GMT 2024
+* Auto generated dao implementation class by DAO-Builder : Tue Jan 09 07:47:31 GMT 2024
 */
 
 public class ExampleDaoImpl implements ExampleDao {
@@ -32,13 +32,13 @@ public class ExampleDaoImpl implements ExampleDao {
 	@Override
 	 public boolean create(ExampleBO data) throws SQLException {
 		 logger.debug("Creating row {}",data);
-		 final long l = data.getCreated();
-		 final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));
+
 		 Map<String, Object> parameters = new HashMap<>();
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
-		 parameters.put(ExampleConstants.CREATED, fromCreated);
+		 final Timestamp getCreatedAsTimestamp = Timestamp.from(Instant.ofEpochMilli(data.getCreated()));
+		 parameters.put(ExampleConstants.CREATED, getCreatedAsTimestamp);
 
 		 this.jdbcTemplate.update(ExampleConstants.INSERT_STATEMENT, parameters);
 		 return true;
@@ -46,13 +46,13 @@ public class ExampleDaoImpl implements ExampleDao {
 
 	 public boolean journal(ExampleBO data) throws SQLException {
 		 logger.debug("Creating row {}",data);
-		 final long l = data.getCreated();
-		 final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));
+
 		 Map<String, Object> parameters = new HashMap<>();
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
-		 parameters.put(ExampleConstants.CREATED, fromCreated);
+		 final Timestamp getCreatedAsTimestamp = Timestamp.from(Instant.ofEpochMilli(data.getCreated()));
+		 parameters.put(ExampleConstants.CREATED, getCreatedAsTimestamp);
 
 		 this.jdbcTemplate.update(ExampleConstants.INSERT_STATEMENT_JOURNAL, parameters);
 		 return true;
@@ -60,13 +60,13 @@ public class ExampleDaoImpl implements ExampleDao {
 	@Override
 	 public void update(ExampleBO data) throws SQLException {
 		 logger.debug("Updating row {}",data);
-		 final long l = data.getCreated();
-		 final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));
+
 		 Map<String, Object> parameters = new HashMap<>();
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
-		 parameters.put(ExampleConstants.CREATED, fromCreated);
+		 final Timestamp getCreatedAsTimestamp = Timestamp.from(Instant.ofEpochMilli(data.getCreated()));
+		 parameters.put(ExampleConstants.CREATED, getCreatedAsTimestamp);
 
 		 this.jdbcTemplate.update(ExampleConstants.UPDATE_STATEMENT, parameters);
 	}
@@ -114,7 +114,7 @@ public class ExampleDaoImpl implements ExampleDao {
 			long id = rs.getLong(ExampleConstants.ID);
 			String name = rs.getString(ExampleConstants.NAME);
 			String surname = rs.getString(ExampleConstants.SURNAME);
-			long created = rs.getLong(ExampleConstants.CREATED);
+			long created = rs.getTimestamp(ExampleConstants.CREATED).getTime();
 			return new ExampleBO(id,name,surname,created);
 		}
 	}

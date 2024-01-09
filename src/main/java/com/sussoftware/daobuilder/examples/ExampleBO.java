@@ -15,7 +15,7 @@ public class ExampleBO {
     private final String name;
     @DatabaseField(name = "SURNAME", isSearchField = true, searchFieldSqlName = "SELECT_BY_SURNAME")
     private final String surname;
-    @DatabaseField(name = "CREATED")
+    @DatabaseField(name = "CREATED", isTimestampField = true)
     private final long created;
 
     public ExampleBO(long id, String name, String surname, long created) {

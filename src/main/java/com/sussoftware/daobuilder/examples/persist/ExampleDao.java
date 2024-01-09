@@ -4,7 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Mon Jan 08 10:52:08 GMT 2024
+* Auto generated dao implementation class by DAO-Builder : Tue Jan 09 07:47:31 GMT 2024
 */
 public interface ExampleDao {
 

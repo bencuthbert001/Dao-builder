@@ -1,7 +1,7 @@
 package com.sussoftware.daobuilder.examples.persist;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Mon Jan 08 10:52:08 GMT 2024
+* Auto generated dao implementation class by DAO-Builder : Tue Jan 09 07:47:31 GMT 2024
 */
 
 public class ExampleConstants {

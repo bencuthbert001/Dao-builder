@@ -311,9 +311,6 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t public boolean create(" + boName + " data) throws SQLException {\n");
         builder.append("\t\t logger.debug(\"Creating row {}\",data);\n");
-        builder.append("\t\t final long l = data.getCreated();");
-        builder.append("\n");
-        builder.append("\t\t final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));");
         builder.append("\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
@@ -321,10 +318,12 @@ public class DAOBuilder {
         for (Field field : databaseFields) {
             DatabaseField dbField = field.getAnnotation(DatabaseField.class);
             Method method = findMethodForField(field, declaredMethods);
-            String dbNameFieldAnnotation = dbField.name();
             final String databaseFieldName = dbField.name();
-            if(dbNameFieldAnnotation.contains("CREATED")) {
-                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", fromCreated);");
+            boolean isTimestamp = dbField.isTimestampField();
+            if(isTimestamp) {
+                String fieldNameWithTimestamp = method.getName()+"AsTimestamp";
+                builder.append("\t\t final Timestamp "+fieldNameWithTimestamp+" = Timestamp.from(Instant.ofEpochMilli(data." + method.getName()+"()));\n");
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", "+fieldNameWithTimestamp+");");
                 builder.append("\n");
                 continue;
             }
@@ -346,9 +345,6 @@ public class DAOBuilder {
         if(this.shouldCreateArchive) {
             builder.append("\t public boolean journal(" + boName + " data) throws SQLException {\n");
             builder.append("\t\t logger.debug(\"Creating row {}\",data);\n");
-            builder.append("\t\t final long l = data.getCreated();");
-            builder.append("\n");
-            builder.append("\t\t final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));");
             builder.append("\n");
             builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
             builder.append("\n");
@@ -356,10 +352,11 @@ public class DAOBuilder {
             for (Field field : databaseFields) {
                 DatabaseField dbField = field.getAnnotation(DatabaseField.class);
                 Method method = findMethodForField(field, declaredMethods);
-                String dbNameFieldAnnotation = dbField.name();
                 final String databaseFieldName = dbField.name();
-                if(dbNameFieldAnnotation.contains("CREATED")) {
-                    builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", fromCreated);");
+                if(dbField.isTimestampField()) {
+                    String fieldNameWithTimestamp = method.getName()+"AsTimestamp";
+                    builder.append("\t\t final Timestamp "+fieldNameWithTimestamp+" = Timestamp.from(Instant.ofEpochMilli(data." + method.getName()+"()));\n");
+                    builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", "+fieldNameWithTimestamp+");");
                     builder.append("\n");
                     continue;
                 }
@@ -383,21 +380,19 @@ public class DAOBuilder {
         builder.append("\n");
         builder.append("\t public void update(" + boName + " data) throws SQLException {\n");
         builder.append("\t\t logger.debug(\"Updating row {}\",data);\n");
-        builder.append("\t\t final long l = data.getCreated();");
-        builder.append("\n");
-        builder.append("\t\t final Timestamp fromCreated = Timestamp.from(Instant.ofEpochMilli(l));");
         builder.append("\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
 
         for (Field field : databaseFields) {
             DatabaseField dbField = field.getAnnotation(DatabaseField.class);
-            String dbNameFieldAnnotation = dbField.name();
             Method method = findMethodForField(field, declaredMethods);
             final String databaseFieldName = dbField.name();
 
-            if(dbNameFieldAnnotation.contains("CREATED")) {
-                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", fromCreated);");
+            if(dbField.isTimestampField()) {
+                String fieldNameWithTimestamp = method.getName()+"AsTimestamp";
+                builder.append("\t\t final Timestamp "+fieldNameWithTimestamp+" = Timestamp.from(Instant.ofEpochMilli(data." + method.getName()+"()));\n");
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", "+fieldNameWithTimestamp+");");
                 builder.append("\n");
                 continue;
             }
@@ -514,7 +509,12 @@ public class DAOBuilder {
             String capitaliseFirstChar = s3 + className.substring(1, className.length());
             final String name = field.getName();
             constructorBuilder.append(name+",");
-            builder.append("\t\t\t" + className + " " + name + " = rs.get" + capitaliseFirstChar + "(" + constantsName + "." + databaseFieldName + ");");
+
+            if(dbField.isTimestampField()) {
+                builder.append("\t\t\t" + className + " " + name + " = rs.getTimestamp(" + constantsName + "." + databaseFieldName + ").getTime();");
+            }else {
+                builder.append("\t\t\t" + className + " " + name + " = rs.get" + capitaliseFirstChar + "(" + constantsName + "." + databaseFieldName + ");");
+            }
             builder.append("\n");
         }
         String constructureValueWithComma = constructorBuilder.toString();
