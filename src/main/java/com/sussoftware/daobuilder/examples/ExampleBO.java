@@ -15,13 +15,16 @@ public class ExampleBO {
     private final String name;
     @DatabaseField(name = "SURNAME", isSearchField = true, searchFieldSqlName = "SELECT_BY_SURNAME")
     private final String surname;
+    @DatabaseField(name = "status", isEnumField = true)
+    private final Status status;
     @DatabaseField(name = "CREATED", isTimestampField = true)
     private final long created;
 
-    public ExampleBO(long id, String name, String surname, long created) {
+    public ExampleBO(long id, String name, String surname, Status status, long created) {
         this.id = id;
         this.name = name;
         this.surname = surname;
+        this.status = status;
         this.created = created;
     }
 
@@ -41,12 +44,17 @@ public class ExampleBO {
         return created;
     }
 
+    public Status getStatus() {
+        return status;
+    }
+
     @Override
     public String toString() {
         return "ExampleBO{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", surname=" + surname +
+                ", surname='" + surname + '\'' +
+                ", status=" + status +
                 ", created=" + created +
                 '}';
     }

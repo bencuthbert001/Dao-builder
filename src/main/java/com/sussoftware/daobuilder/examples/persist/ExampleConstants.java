@@ -1,15 +1,15 @@
 package com.sussoftware.daobuilder.examples.persist;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Tue Jan 09 07:47:31 GMT 2024
+* Auto generated dao implementation class by DAO-Builder : Thu Jan 11 08:12:04 GMT 2024
 */
 
 public class ExampleConstants {
 	public static final String TABLE_NAME = "EXAMPLE_TABLE";
 	public static final String TABLE_NAME_JOURNAL = "EXAMPLE_TABLE_JOURNAL";
-	public static final String INSERT_STATEMENT = "INSERT INTO "+ExampleConstants.TABLE_NAME+"(ID,NAME,SURNAME,CREATED) VALUES(:ID,:NAME,:SURNAME,:CREATED)";
+	public static final String INSERT_STATEMENT = "INSERT INTO "+ExampleConstants.TABLE_NAME+"(ID,NAME,SURNAME,status,CREATED) VALUES(:ID,:NAME,:SURNAME,:status,:CREATED)";
 
-	public static final String INSERT_STATEMENT_JOURNAL = "INSERT INTO "+ExampleConstants.TABLE_NAME_JOURNAL+"(ID,NAME,SURNAME,CREATED) VALUES(:ID,:NAME,:SURNAME,:CREATED)";	public static final String UPDATE_STATEMENT = "UPDATE "+ExampleConstants.TABLE_NAME+" SET NAME = :NAME,SURNAME = :SURNAME,CREATED = :CREATED  WHERE ID =  :ID";
+	public static final String INSERT_STATEMENT_JOURNAL = "INSERT INTO "+ExampleConstants.TABLE_NAME_JOURNAL+"(ID,NAME,SURNAME,status,CREATED) VALUES(:ID,:NAME,:SURNAME,:status,:CREATED)";	public static final String UPDATE_STATEMENT = "UPDATE "+ExampleConstants.TABLE_NAME+" SET NAME = :NAME,SURNAME = :SURNAME,status = :status,CREATED = :CREATED  WHERE ID =  :ID";
 	public static final String SELECT_ALL_SQL = "SELECT * FROM "+ExampleConstants.TABLE_NAME+"";
 	public static final String DELETE_ID_SQL = "DELETE FROM "+ExampleConstants.TABLE_NAME+" WHERE ID = :ID";
 	public static final String SELECT_BY_ID = "SELECT * FROM "+ExampleConstants.TABLE_NAME+" WHERE ID = :ID";
@@ -18,5 +18,6 @@ public class ExampleConstants {
 	public static final String ID = "ID";
 	public static final String NAME = "NAME";
 	public static final String SURNAME = "SURNAME";
+	public static final String status = "status";
 	public static final String CREATED = "CREATED";
 }

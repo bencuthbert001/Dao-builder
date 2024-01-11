@@ -512,6 +512,12 @@ public class DAOBuilder {
 
             if(dbField.isTimestampField()) {
                 builder.append("\t\t\t" + className + " " + name + " = rs.getTimestamp(" + constantsName + "." + databaseFieldName + ").getTime();");
+            }else if(dbField.isEnumField()) {
+                builder.append("\t\t\tString " + name + "AsString = rs.getString(" + constantsName + "." + databaseFieldName + ");");
+                builder.append("\n");
+                final Class<?> type = field.getType();
+                final String enumTypeName = type.getName();
+                builder.append("\t\t\t"+enumTypeName+" " + name + " = "+enumTypeName+".valueOf("+name+"AsString);");
             }else {
                 builder.append("\t\t\t" + className + " " + name + " = rs.get" + capitaliseFirstChar + "(" + constantsName + "." + databaseFieldName + ");");
             }

@@ -30,7 +30,7 @@ When using isSearchField = true, you can specify the searchFieldSqlName select s
 @DatabaseField(name = "SURNAME")  - This annotates a field as a regular field and is included in create,update,delete,insert
 <br>
 <br>
-To the build create a List of objects on a return statement simply specify isSearchFieldMultiple = true
+To have the interface return a List of objects on a return statement simply specify isSearchFieldMultiple = true
 <br><br>
 @DatabaseField(name = "NAME", isSearchField = true, isSearchFieldMultiple = true, searchFieldSqlName = "SELECT_BY_NAME")
 private final String name;

@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Tue Jan 09 07:47:31 GMT 2024
+* Auto generated dao implementation class by DAO-Builder : Thu Jan 11 08:12:04 GMT 2024
 */
 
 public class ExampleDaoImpl implements ExampleDao {
@@ -37,6 +37,7 @@ public class ExampleDaoImpl implements ExampleDao {
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
+		 parameters.put(ExampleConstants.status, data.getStatus());
 		 final Timestamp getCreatedAsTimestamp = Timestamp.from(Instant.ofEpochMilli(data.getCreated()));
 		 parameters.put(ExampleConstants.CREATED, getCreatedAsTimestamp);
 
@@ -51,6 +52,7 @@ public class ExampleDaoImpl implements ExampleDao {
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
+		 parameters.put(ExampleConstants.status, data.getStatus());
 		 final Timestamp getCreatedAsTimestamp = Timestamp.from(Instant.ofEpochMilli(data.getCreated()));
 		 parameters.put(ExampleConstants.CREATED, getCreatedAsTimestamp);
 
@@ -65,6 +67,7 @@ public class ExampleDaoImpl implements ExampleDao {
 		 parameters.put(ExampleConstants.ID, data.getId());
 		 parameters.put(ExampleConstants.NAME, data.getName());
 		 parameters.put(ExampleConstants.SURNAME, data.getSurname());
+		 parameters.put(ExampleConstants.status, data.getStatus());
 		 final Timestamp getCreatedAsTimestamp = Timestamp.from(Instant.ofEpochMilli(data.getCreated()));
 		 parameters.put(ExampleConstants.CREATED, getCreatedAsTimestamp);
 
@@ -114,8 +117,10 @@ public class ExampleDaoImpl implements ExampleDao {
 			long id = rs.getLong(ExampleConstants.ID);
 			String name = rs.getString(ExampleConstants.NAME);
 			String surname = rs.getString(ExampleConstants.SURNAME);
+			String statusAsString = rs.getString(ExampleConstants.status);
+			com.sussoftware.daobuilder.examples.Status status = com.sussoftware.daobuilder.examples.Status.valueOf(statusAsString);
 			long created = rs.getTimestamp(ExampleConstants.CREATED).getTime();
-			return new ExampleBO(id,name,surname,created);
+			return new ExampleBO(id,name,surname,status,created);
 		}
 	}
 }

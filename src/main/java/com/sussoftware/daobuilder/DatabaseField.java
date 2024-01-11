@@ -49,4 +49,11 @@ public @interface DatabaseField {
      * @return boolean
      */
     boolean isTimestampField() default false;
+
+    /**
+     * This should  be set to true if the field is an enum so that the rowMapper
+     * can decode it.
+     * @return
+     */
+    boolean isEnumField() default false;
 }
