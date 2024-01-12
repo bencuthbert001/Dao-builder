@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import org.springframework.util.StringUtils;
 
 /**
  * This is a simple DAO class builder, that will create a java class
@@ -84,6 +83,10 @@ public class DAOBuilder {
         String constantsName = name + "Constants";
         final DatabaseObject annotation = (DatabaseObject) object.getDeclaredAnnotation(DatabaseObject.class);
         final String tableName = annotation.tableName();
+        if(tableName == null) {
+            System.out.println("Please specify the table property on the object "+boName);
+            System.exit(-1);
+        }
         String selectAllStatement = String.format(SELECT_ALL, "\"+"+constantsName+".TABLE_NAME+\"");
         String primaryKeyFieldName = null;
         String deletePrimaryKeyStatement = null;
@@ -310,7 +313,7 @@ public class DAOBuilder {
         builder.append("\t@Override");
         builder.append("\n");
         builder.append("\t public boolean create(" + boName + " data) throws SQLException {\n");
-        builder.append("\t\t logger.debug(\"Creating row {}\",data);\n");
+        builder.append("\t\t logger.trace(\"Creating row {}\",data);\n");
         builder.append("\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
@@ -344,7 +347,7 @@ public class DAOBuilder {
         builder.append("\n");
         if(this.shouldCreateArchive) {
             builder.append("\t public boolean journal(" + boName + " data) throws SQLException {\n");
-            builder.append("\t\t logger.debug(\"Creating row {}\",data);\n");
+            builder.append("\t\t logger.trace(\"Creating row {}\",data);\n");
             builder.append("\n");
             builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
             builder.append("\n");
@@ -379,7 +382,7 @@ public class DAOBuilder {
         builder.append("\t@Override");
         builder.append("\n");
         builder.append("\t public void update(" + boName + " data) throws SQLException {\n");
-        builder.append("\t\t logger.debug(\"Updating row {}\",data);\n");
+        builder.append("\t\t logger.trace(\"Updating row {}\",data);\n");
         builder.append("\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
@@ -421,7 +424,7 @@ public class DAOBuilder {
         builder.append("\n");
         DatabaseField primarySearchField = findByFieldFromName(primaryKeyFieldName, databaseFields);
         builder.append("\t public void delete(long id) {\n");
-        builder.append("\t\t logger.debug(\"Attempting to delete {}\",id);\n");
+        builder.append("\t\t logger.trace(\"Attempting to delete {}\",id);\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
         builder.append("\t\t parameters.put(" + constantsName + "." + primarySearchField.name() + ", id);");
@@ -432,7 +435,7 @@ public class DAOBuilder {
         builder.append("\t@Override");
         builder.append("\n");
         builder.append("\t public " + boName + " findBy" + primaryKeyFieldInCaps + "(long id) {\n");
-        builder.append("\t\t logger.debug(\"Attempting to findBy {}\",id);\n");
+        builder.append("\t\t logger.trace(\"Attempting to findBy {}\",id);\n");
         builder.append("\t\t Map<String, Object> parameters = new HashMap<>();");
         builder.append("\n");
         builder.append("\t\t parameters.put(" + constantsName + "." + primarySearchField.name() + ", id);");
