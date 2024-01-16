@@ -330,6 +330,11 @@ public class DAOBuilder {
                 builder.append("\n");
                 continue;
             }
+            if(dbField.isEnumField()) {
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data." + method.getName() + "().name());");
+                builder.append("\n");
+                continue;
+            }
             if (method != null) {
                 builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data." + method.getName() + "());");
                 builder.append("\n");
@@ -360,6 +365,11 @@ public class DAOBuilder {
                     String fieldNameWithTimestamp = method.getName()+"AsTimestamp";
                     builder.append("\t\t final Timestamp "+fieldNameWithTimestamp+" = Timestamp.from(Instant.ofEpochMilli(data." + method.getName()+"()));\n");
                     builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", "+fieldNameWithTimestamp+");");
+                    builder.append("\n");
+                    continue;
+                }
+                if(dbField.isEnumField()) {
+                    builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data." + method.getName() + "().name());");
                     builder.append("\n");
                     continue;
                 }
@@ -396,6 +406,11 @@ public class DAOBuilder {
                 String fieldNameWithTimestamp = method.getName()+"AsTimestamp";
                 builder.append("\t\t final Timestamp "+fieldNameWithTimestamp+" = Timestamp.from(Instant.ofEpochMilli(data." + method.getName()+"()));\n");
                 builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", "+fieldNameWithTimestamp+");");
+                builder.append("\n");
+                continue;
+            }
+            if(dbField.isEnumField()) {
+                builder.append("\t\t parameters.put(" + constantsName + "." + databaseFieldName + ", data." + method.getName() + "().name());");
                 builder.append("\n");
                 continue;
             }
