@@ -574,11 +574,11 @@ public class DAOBuilder {
         }
         builder.append("\n");
         builder.append("\tpublic static final String INSERT_STATEMENT = \"" + insertStatement + "\";");
-        builder.append("\n");
         if(this.shouldCreateArchive) {
             builder.append("\n");
             builder.append("\tpublic static final String INSERT_STATEMENT_JOURNAL = \"" + insertJournal + "\";");
         }
+        builder.append("\n");
         builder.append("\tpublic static final String UPDATE_STATEMENT = \"" + updateStatement + "\";");
         builder.append("\n");
         builder.append("\tpublic static final String SELECT_ALL_SQL = \"" + selectAllStatement + "\";");

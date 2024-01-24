@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
-* Auto generated dao implementation class by DAO-Builder : Tue Jan 16 09:43:53 GMT 2024
+* Auto generated dao implementation class by DAO-Builder : Wed Jan 24 15:15:32 GMT 2024
 */
 
 public class ExampleDaoImpl implements ExampleDao {
